@@ -7,6 +7,21 @@ import "@ethersproject/shims"
 // Import the ethers library
 import { ethers } from "ethers";
 
+//Fisher–Yates shuffle
+Array.prototype.shuffle = function () {
+    var array = this;
+    var m = array.length,
+      t,
+      i;
+    while (m) {
+      i = Math.floor(Math.random() * m--);
+      t = array[m];
+      array[m] = array[i];
+      array[i] = t;
+    }
+    return array;
+};
+
 export function createWallet(password, path){
     return new Promise((fulfill, reject)=>{
         try {
@@ -25,14 +40,18 @@ export function createWallet(password, path){
         
             end = performance.now();
             console.log('wallet init', `${end - start}ms\n`);
-        
+            
+            let mnemonicArr = mnemonic.split(' ');
+            let shuffleMnemonicArr = mnemonicArr.slice().shuffle();
+
             wallet.encrypt(password).then(res=>{
                 end = performance.now();
                 let jsonObj = JSON.parse(res);
                 delete jsonObj['x-ethers'];
                 fulfill({
-                    mnemonic : mnemonic, 
-                    keystore : jsonObj
+                    mnemonic : mnemonicArr, 
+                    keystore : jsonObj,
+                    shuffleMnemonic : shuffleMnemonicArr
                 })
                 console.log(`${end - start}ms\n`,res);
             })
