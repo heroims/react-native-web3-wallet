@@ -28,9 +28,11 @@ export function createWallet(password, path){
         
             wallet.encrypt(password).then(res=>{
                 end = performance.now();
+                let jsonObj = JSON.parse(res);
+                delete jsonObj['x-ethers'];
                 fulfill({
                     mnemonic : mnemonic, 
-                    keystore :JSON.parse(res)
+                    keystore : jsonObj
                 })
                 console.log(`${end - start}ms\n`,res);
             })
@@ -48,8 +50,14 @@ export function getBalance(network, address){
         try {
             var start = performance.now();
 
-            let provider = new ethers.providers.JsonRpcProvider(network);
-           
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
+
             end = performance.now();
             console.log('provider init', `${end - start}ms\n`);
             
@@ -74,7 +82,13 @@ export function getContractBalance(network, contractAddress, contractAbi, addres
         try {
             var start = performance.now();
 
-            let provider = new ethers.providers.JsonRpcProvider(network);
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
 
             end = performance.now();
             console.log('provider init', `${end - start}ms\n`);
@@ -145,7 +159,9 @@ export function importPrivateKey(privateKey, password){
             console.log('privatekey', realPrivatekey)
             let wallet = new ethers.Wallet(realPrivatekey);
             wallet.encrypt(password).then(res=>{
-                fulfill(res);
+                let jsonObj = JSON.parse(res);
+                delete jsonObj['x-ethers'];
+                fulfill(jsonObj);
             })
             .catch(err=>{
                 reject(err);
@@ -162,7 +178,9 @@ export function importMnemonic(mnemonic, password){
         try {
             let wallet = ethers.Wallet.fromMnemonic(mnemonic);
             wallet.encrypt(password).then(res=>{
-                fulfill(res);
+                let jsonObj = JSON.parse(res);
+                delete jsonObj['x-ethers'];
+                fulfill(jsonObj);
             })
             .catch(err=>{
                 reject(err);
@@ -183,4 +201,253 @@ export function importKeystore(keystore, password){
             reject(err);
         });
     });
+}
+
+export function getGasPrice(network){
+    return new Promise((fulfill, reject)=>{
+        try {
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
+
+            provider.getGasPrice().then(res=>{
+                fulfill(res);
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+export function getGasLimit(network, fromAddress, toAddress, amount, data){
+    return new Promise((fulfill, reject)=>{
+        try {
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
+            let realAmount = ethers.utils.parseEther(amount);
+
+            let tx = {
+                to: toAddress, 
+                data: data, 
+                from: fromAddress, 
+                value: realAmount
+            }
+            provider.estimateGas(tx).then(res=>{
+                fulfill(res);
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+export function formatBignumber(value){
+    return ethers.utils.formatUnits(value);
+}
+
+export function getNonce(network, address, blockTag = 'pending'){
+    return new Promise((fulfill, reject)=>{
+        let provider;
+        if(network==='' || network===undefined){
+            provider = new ethers.providers.getDefaultProvider();
+        }
+        else{
+            provider = new ethers.providers.JsonRpcProvider(network);
+        }
+        
+        provider.getTransactionCount(address, blockTag).then(nonce=>{
+            fulfill(nonce);
+        })
+        .catch(err=>{
+            reject(err);
+        });
+    });
+}
+
+export function waitForTransaction(network, transactionHash){
+    return new Promise((fulfill, reject)=>{
+        try {
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
+
+            provider.waitForTransaction(transactionHash).then(res=>{
+                fulfill(res)
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+export function sendTransaction(network, signedTransaction){
+    return new Promise((fulfill, reject)=>{
+        try {
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
+
+            provider.sendTransaction(signedTransaction).then(res=>{
+                fulfill(res)
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+export function signTransaction(keystore, password, nonce, gasLimit, gasPrice, toAddress, chainId, amount, data){
+    return new Promise((fulfill, reject)=>{
+        try {
+            ethers.Wallet.fromEncryptedJson(keystore, password).then(res=>{
+                let wallet = res;
+                let realAmount = ethers.utils.parseEther(amount);
+
+                let tx = {
+                    nonce: nonce,
+                    gasLimit: gasLimit,
+                    gasPrice: gasPrice,
+                    to: toAddress,
+                    chainId: chainId,
+                    value: realAmount,
+                    data: data
+                };
+                wallet.signTransaction(tx).then(res=>{
+                    fulfill(res);
+                })
+                .catch(err=>{
+                    reject(err);
+                });
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+
+}
+
+export function getContractGasLimit(network, contractAddress, contractAbi, keystore, password, toAddress, amount, decims){
+    return new Promise((fulfill, reject)=>{
+        try {
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
+
+            ethers.Wallet.fromEncryptedJson(keystore, password).then(res=>{
+                let wallet = res;
+                let realAmount = ethers.utils.parseUnits(amount, decims);
+
+                let walletWithSigner = wallet.connect(provider);
+                let contractWithSigner = new ethers.Contract(contractAddress, contractAbi, walletWithSigner);
+
+                contractWithSigner.estimateGas.transfer(toAddress, realAmount).then(gas=>{
+                    fulfill(gas);
+                })
+                .catch(err=>{
+                    reject(err);
+                });
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+export function waitForContractTransaction(tx){
+    return tx.wait();
+}
+
+export function contractTransaction(network, contractAddress, contractAbi, keystore, password, nonce, gasLimit, gasPrice, toAddress, amount, decims){
+    return new Promise((fulfill, reject)=>{
+        try {
+
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
+
+
+            ethers.Wallet.fromEncryptedJson(keystore, password).then(res=>{
+                let wallet = res;
+                let realAmount = ethers.utils.parseUnits(amount, decims);
+
+                let walletWithSigner = wallet.connect(provider);
+                let contractWithSigner = new ethers.Contract(contractAddress, contractAbi, walletWithSigner);
+                
+                function realTransfer(){
+                    let tx = {
+                        nonce: nonce,
+                        gasLimit: gasLimit,
+                        gasPrice: gasPrice,
+                    };
+
+                    contractWithSigner.transfer(toAddress, realAmount, tx).then(res=>{
+                        fulfill(res);
+                    })
+                    .catch(err=>{
+                        reject(err);
+                    });
+                }
+
+                if(gasLimit === 0){
+                    contractWithSigner.estimateGas.transfer(toAddress, realAmount).then(gas=>{
+                        gasLimit = gas;
+                        realTransfer();
+                    });
+                }
+                else{
+                    realTransfer();
+                }
+                
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+
 }
