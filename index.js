@@ -22,7 +22,7 @@ Array.prototype.shuffle = function () {
     return array;
 };
 
-export function createWallet(password, path){
+export function createWallet(password, path, needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
         try {
             console.log('create begin');
@@ -48,12 +48,20 @@ export function createWallet(password, path){
                 end = performance.now();
                 let jsonObj = JSON.parse(res);
                 delete jsonObj['x-ethers'];
-                fulfill({
+                
+                let response = {
                     mnemonic : mnemonicArr, 
                     keystore : jsonObj,
                     shuffleMnemonic : shuffleMnemonicArr,
-                    privateKey : wallet.privateKey
-                })
+                };
+                if(needPublicKey){
+                    response.publicKey=wallet.publicKey;
+                }
+                if(needPrivateKey){
+                    response.privateKey=wallet.privateKey;
+                }
+
+                fulfill(response)
             })
             .catch(err=>{
                 reject(err);
@@ -200,7 +208,7 @@ export function exportKeystore(keystore, password){
     });
 }
 
-export function importPrivateKey(privateKey, password){
+export function importPrivateKey(privateKey, password, needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
         try {
             var realPrivatekey = privateKey;
@@ -212,7 +220,17 @@ export function importPrivateKey(privateKey, password){
             wallet.encrypt(password).then(res=>{
                 let jsonObj = JSON.parse(res);
                 delete jsonObj['x-ethers'];
-                fulfill(jsonObj);
+
+                let response = {
+                    keystore : jsonObj,
+                };
+                if(needPublicKey){
+                    response.publicKey=res.publicKey;
+                }
+                if(needPrivateKey){
+                    response.privateKey=res.privateKey;
+                }
+                fulfill(response);
             })
             .catch(err=>{
                 reject(err);
@@ -224,14 +242,24 @@ export function importPrivateKey(privateKey, password){
     });
 }
 
-export function importMnemonic(mnemonic, password){
+export function importMnemonic(mnemonic, password, needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
         try {
             let wallet = ethers.Wallet.fromMnemonic(mnemonic);
             wallet.encrypt(password).then(res=>{
                 let jsonObj = JSON.parse(res);
                 delete jsonObj['x-ethers'];
-                fulfill(jsonObj);
+
+                let response = {
+                    keystore : jsonObj,
+                };
+                if(needPublicKey){
+                    response.publicKey=res.publicKey;
+                }
+                if(needPrivateKey){
+                    response.privateKey=res.privateKey;
+                }
+                fulfill(response);
             })
             .catch(err=>{
                 reject(err);
@@ -242,11 +270,20 @@ export function importMnemonic(mnemonic, password){
     });
 }
 
-export function importKeystore(keystore, password){
+export function importKeystore(keystore, password, needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
         ethers.Wallet.fromEncryptedJson(keystore,password)
         .then(res=>{
-            fulfill(keystore);
+            let response = {
+                keystore : keystore,
+            };
+            if(needPublicKey){
+                response.publicKey=res.publicKey;
+            }
+            if(needPrivateKey){
+                response.privateKey=res.privateKey;
+            }
+            fulfill(response);
         })
         .catch(err=>{
             reject(err);
