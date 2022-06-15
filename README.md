@@ -10,7 +10,8 @@ This wallet module does not expose the private key, and only advocates storing t
 
 ```bash
 npm install github:heroims/react-native-web3-wallet --save
-
+npm install @ethersproject/shims --save
+npm install react-native-get-random-values --save
 ```
 
 ## Usage
