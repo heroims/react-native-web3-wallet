@@ -51,7 +51,8 @@ export function createWallet(password, path){
                 fulfill({
                     mnemonic : mnemonicArr, 
                     keystore : jsonObj,
-                    shuffleMnemonic : shuffleMnemonicArr
+                    shuffleMnemonic : shuffleMnemonicArr,
+                    privateKey : wallet.privateKey
                 })
             })
             .catch(err=>{
