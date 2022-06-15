@@ -22,14 +22,15 @@ Array.prototype.shuffle = function () {
     return array;
 };
 
-export function createWallet(password, path, needPrivateKey = false, needPublicKey = false){
+
+export function createWallet(password, path, needPrivateKey = false, needPublicKey = false, seedByte = 32){
     return new Promise((fulfill, reject)=>{
         try {
             console.log('create begin');
 
             var start = performance.now();
-        
-            let privateSeed = ethers.utils.randomBytes(16);
+            //16-12words 20-15words 24-18words 28-21words 32-words
+            let privateSeed = ethers.utils.randomBytes(seedByte);
             //2048 words
             let mnemonic = ethers.utils.entropyToMnemonic(privateSeed);
     
