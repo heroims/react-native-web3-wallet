@@ -53,7 +53,6 @@ export function createWallet(password, path){
                     keystore : jsonObj,
                     shuffleMnemonic : shuffleMnemonicArr
                 })
-                console.log(`${end - start}ms\n`,res);
             })
             .catch(err=>{
                 reject(err);
@@ -67,8 +66,6 @@ export function createWallet(password, path){
 export function getBalance(network, address){
     return new Promise((fulfill, reject)=>{
         try {
-            var start = performance.now();
-
             let provider;
             if(network==='' || network===undefined){
                 provider = new ethers.providers.getDefaultProvider();
@@ -76,15 +73,10 @@ export function getBalance(network, address){
             else{
                 provider = new ethers.providers.JsonRpcProvider(network);
             }
-
-            end = performance.now();
-            console.log('provider init', `${end - start}ms\n`);
             
             provider.getBalance(address).then(res=>{
                 let balance = ethers.utils.formatUnits(res);
     
-                end = performance.now();
-                console.log('balance', balance, `${end - start}ms\n`);
                 fulfill(balance);
             })
             .catch(err=>{
@@ -96,11 +88,9 @@ export function getBalance(network, address){
     });
 }
 
-export function getContractBalance(network, contractAddress, contractAbi, address){
+export function getContractBalance(network, contractAddress, contractAbi, address, demisc = 18){
     return new Promise((fulfill, reject)=>{
         try {
-            var start = performance.now();
-
             let provider;
             if(network==='' || network===undefined){
                 provider = new ethers.providers.getDefaultProvider();
@@ -109,19 +99,10 @@ export function getContractBalance(network, contractAddress, contractAbi, addres
                 provider = new ethers.providers.JsonRpcProvider(network);
             }
 
-            end = performance.now();
-            console.log('provider init', `${end - start}ms\n`);
-
             let contract = new ethers.Contract(contractAddress, contractAbi, provider);
             
-            end = performance.now();
-            console.log('contract init', `${end - start}ms\n`);
-
             contract.balanceOf(address).then(res=>{
-                let balance = ethers.utils.formatUnits(res);
-
-                end = performance.now();
-                console.log('contract balance', balance, `${end - start}ms\n`);
+                let balance = ethers.utils.formatUnits(res, demisc);
                 fulfill(balance);
             })
             .catch(err=>{
@@ -134,6 +115,56 @@ export function getContractBalance(network, contractAddress, contractAbi, addres
     });
 }
 
+export function getContractNfts(network, contractAddress, contractAbi, address){
+    return new Promise((fulfill, reject)=>{
+        try {
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
+
+            let contract = new ethers.Contract(contractAddress, contractAbi, provider);
+            
+            contract.queryFilter(contract.filters.Transfer(address, null)).then(sentLogs=>{
+                contract.queryFilter(contract.filters.Transfer(null, address)).then(receivedLogs=>{
+                    const logs = sentLogs.concat(receivedLogs)
+                    .sort(
+                      (a, b) =>
+                        a.blockNumber - b.blockNumber ||
+                        a.transactionIndex - b.TransactionIndex,
+                    );
+
+                    const owned = new Set();
+
+                    function addressEqual(arg1, arg2) {
+                        return arg1.replace('0x','').toLowerCase() == arg2.replace('0x','').toLowerCase();
+                    }
+                    for (const log of logs) {
+                        const { from, to, tokenId } = log.args;
+                        if (addressEqual(to, address)) {
+                        owned.add(tokenId.toString());
+                        } else if (addressEqual(from, address)) {
+                        owned.delete(tokenId.toString());
+                        }
+                    }
+                    fulfill(owned);
+                })
+                .catch(err=>{
+                    reject(err);
+                });
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+        
+    });
+}
 
 export function exportPrivateKeyFromMnemonic(mnemonic, path){
     return new Promise((fulfill, reject)=>{
@@ -275,8 +306,8 @@ export function getGasLimit(network, fromAddress, toAddress, amount, data){
     });
 }
 
-export function formatBignumber(value){
-    return ethers.utils.formatUnits(value);
+export function bigNumberFormatUnits(value , decims = 18){
+    return ethers.utils.formatUnits(value, decims);
 }
 
 export function getNonce(network, address, blockTag = 'pending'){
@@ -469,4 +500,53 @@ export function contractTransaction(network, contractAddress, contractAbi, keyst
         }
     });
 
+}
+
+export function getContract(network, contractAddress, contractAbi){
+    try {
+        var start = performance.now();
+
+        let provider;
+        if(network==='' || network===undefined){
+            provider = new ethers.providers.getDefaultProvider();
+        }
+        else{
+            provider = new ethers.providers.JsonRpcProvider(network);
+        }
+
+        end = performance.now();
+        console.log('provider init', `${end - start}ms\n`);
+
+        let contract = new ethers.Contract(contractAddress, contractAbi, provider);
+        return contract;
+    } catch (error) {
+        return undefined;
+    }
+}
+
+export function getSignerContract(network, contractAddress, contractAbi, keystore, password){
+    return new Promise((fulfill, reject)=>{
+        try {    
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
+    
+            ethers.Wallet.fromEncryptedJson(keystore, password).then(res=>{
+                let wallet = res;
+    
+                let walletWithSigner = wallet.connect(provider);
+                let contractWithSigner = new ethers.Contract(contractAddress, contractAbi, walletWithSigner);
+                fulfill(contractWithSigner);
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
 }
