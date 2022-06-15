@@ -83,10 +83,8 @@ export function getBalance(network, address){
                 provider = new ethers.providers.JsonRpcProvider(network);
             }
             
-            provider.getBalance(address).then(res=>{
-                let balance = ethers.utils.formatUnits(res);
-    
-                fulfill(balance);
+            provider.getBalance(address).then(res=>{    
+                fulfill(res);
             })
             .catch(err=>{
                 reject(err);
@@ -97,7 +95,7 @@ export function getBalance(network, address){
     });
 }
 
-export function getContractBalance(network, contractAddress, contractAbi, address, demisc = 18){
+export function getContractBalance(network, contractAddress, contractAbi, address){
     return new Promise((fulfill, reject)=>{
         try {
             let provider;
@@ -111,8 +109,7 @@ export function getContractBalance(network, contractAddress, contractAbi, addres
             let contract = new ethers.Contract(contractAddress, contractAbi, provider);
             
             contract.balanceOf(address).then(res=>{
-                let balance = ethers.utils.formatUnits(res, demisc);
-                fulfill(balance);
+                fulfill(res);
             })
             .catch(err=>{
                 reject(err);
@@ -348,6 +345,10 @@ export function bigNumberFormatUnits(value , decims = 18){
     return ethers.utils.formatUnits(value, decims);
 }
 
+export function bigNumberParseUnits(value , decims = 18){
+    return ethers.utils.parseUnits(value, decims);
+}
+
 export function getNonce(network, address, blockTag = 'pending'){
     return new Promise((fulfill, reject)=>{
         let provider;
@@ -523,6 +524,9 @@ export function contractTransaction(network, contractAddress, contractAbi, keyst
                     contractWithSigner.estimateGas.transfer(toAddress, realAmount).then(gas=>{
                         gasLimit = gas;
                         realTransfer();
+                    })
+                    .catch(err=>{
+                        reject(err);
                     });
                 }
                 else{
