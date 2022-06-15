@@ -23,7 +23,7 @@ Array.prototype.shuffle = function () {
 };
 
 
-export function createWallet(password, path, needPrivateKey = false, needPublicKey = false, seedByte = 32){
+export function createWallet(password, path = "m/44'/60'/0'/0/0", needPrivateKey = false, needPublicKey = false, seedByte = 32){
     return new Promise((fulfill, reject)=>{
         try {
             console.log('create begin');
@@ -240,10 +240,10 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
     });
 }
 
-export function importMnemonic(mnemonic, password, needPrivateKey = false, needPublicKey = false){
+export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
         try {
-            let wallet = ethers.Wallet.fromMnemonic(mnemonic);
+            let wallet = ethers.Wallet.fromMnemonic(mnemonic, path);
             wallet.encrypt(password).then(res=>{
                 let jsonObj = JSON.parse(res);
                 delete jsonObj['x-ethers'];
