@@ -23,7 +23,7 @@ Array.prototype.shuffle = function () {
 };
 
 
-export function createWallet(password, path = "m/44'/60'/0'/0/0", needPrivateKey = false, needPublicKey = false, seedByte = 32){
+export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16, needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
         try {
             console.log('create begin');
