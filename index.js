@@ -29,7 +29,7 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
             console.log('create begin');
 
             var start = performance.now();
-            //16-12words 20-15words 24-18words 28-21words 32-words
+            //16-12words 20-15words 24-18words 28-21words 32-24words
             let privateSeed = ethers.utils.randomBytes(seedByte);
             //2048 words
             let mnemonic = ethers.utils.entropyToMnemonic(privateSeed);
@@ -584,6 +584,37 @@ export function getSignerContract(network, contractAddress, contractAbi, keystor
                 let walletWithSigner = wallet.connect(provider);
                 let contractWithSigner = new ethers.Contract(contractAddress, contractAbi, walletWithSigner);
                 fulfill(contractWithSigner);
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+export function getSignerContractWithWallet(contractAddress, contractAbi, walletWithSigner){
+    let contractWithSigner = new ethers.Contract(contractAddress, contractAbi, walletWithSigner);
+    return contractWithSigner;
+}
+
+export function getWalletSigner(network, keystore, password){
+    return new Promise((fulfill, reject)=>{
+        try {    
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
+    
+            ethers.Wallet.fromEncryptedJson(keystore, password).then(res=>{
+                let wallet = res;
+    
+                let walletWithSigner = wallet.connect(provider);
+                fulfill(walletWithSigner);
             })
             .catch(err=>{
                 reject(err);
