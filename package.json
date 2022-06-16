@@ -25,7 +25,7 @@
     "url": "git+https://github.com/heroims/react-native-web3-wallet.git"
   },
   "peerDependencies": {
-    "react-native": "^0.41.2",
+    "react-native": "*",
     "react-native-get-random-values": "^1.8.0"
   },
   "dependencies": {
