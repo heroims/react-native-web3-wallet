@@ -1,0 +1,229 @@
+diff --git a/node_modules/@ethersproject/hdnode/lib.esm/index.d.ts b/node_modules/@ethersproject/hdnode/lib.esm/index.d.ts
+index 23c283b..3bbfc0c 100644
+--- a/node_modules/@ethersproject/hdnode/lib.esm/index.d.ts
++++ b/node_modules/@ethersproject/hdnode/lib.esm/index.d.ts
+@@ -31,11 +31,11 @@ export declare class HDNode implements ExternallyOwnedAccount {
+     private _derive;
+     derivePath(path: string): HDNode;
+     static _fromSeed(seed: BytesLike, mnemonic: Mnemonic): HDNode;
+-    static fromMnemonic(mnemonic: string, password?: string, wordlist?: string | Wordlist): HDNode;
++    static fromMnemonic(mnemonic: string, password?: string, wordlist?: string | Wordlist): Promise<HDNode>;
+     static fromSeed(seed: BytesLike): HDNode;
+     static fromExtendedKey(extendedKey: string): HDNode;
+ }
+-export declare function mnemonicToSeed(mnemonic: string, password?: string): string;
++export declare function mnemonicToSeed(mnemonic: string, password?: string): Promise<string>;
+ export declare function mnemonicToEntropy(mnemonic: string, wordlist?: string | Wordlist): string;
+ export declare function entropyToMnemonic(entropy: BytesLike, wordlist?: string | Wordlist): string;
+ export declare function isValidMnemonic(mnemonic: string, wordlist?: Wordlist): boolean;
+diff --git a/node_modules/@ethersproject/hdnode/lib.esm/index.js b/node_modules/@ethersproject/hdnode/lib.esm/index.js
+index 5426859..c7ae8d0 100644
+--- a/node_modules/@ethersproject/hdnode/lib.esm/index.js
++++ b/node_modules/@ethersproject/hdnode/lib.esm/index.js
+@@ -3,7 +3,7 @@ import { Base58 } from "@ethersproject/basex";
+ import { arrayify, concat, hexDataSlice, hexZeroPad, hexlify } from "@ethersproject/bytes";
+ import { BigNumber } from "@ethersproject/bignumber";
+ import { toUtf8Bytes, UnicodeNormalizationForm } from "@ethersproject/strings";
+-import { pbkdf2 } from "@ethersproject/pbkdf2";
++import { Aes } from "react-native-aes-crypto"
+ import { defineReadOnly } from "@ethersproject/properties";
+ import { SigningKey } from "@ethersproject/signing-key";
+ import { computeHmac, ripemd160, sha256, SupportedAlgorithm } from "@ethersproject/sha2";
+@@ -245,11 +245,17 @@ export class HDNode {
+     }
+ }
+ export function mnemonicToSeed(mnemonic, password) {
+-    if (!password) {
+-        password = "";
+-    }
+-    const salt = toUtf8Bytes("mnemonic" + password, UnicodeNormalizationForm.NFKD);
+-    return pbkdf2(toUtf8Bytes(mnemonic, UnicodeNormalizationForm.NFKD), salt, 2048, 64, "sha512");
++    return new Promise((resolve,reject)=>{
++        if (!password) { password = ""; }
++
++        Aes.pbkdf2(mnemonic, "mnemonic" + password, 2048, 64)
++        .then(resString=>{
++            resolve('0x' + resString);
++        })
++        .catch(err=>{
++            reject(err);
++        })
++    })
+ }
+ export function mnemonicToEntropy(mnemonic, wordlist) {
+     wordlist = getWordlist(wordlist);
+diff --git a/node_modules/@ethersproject/hdnode/lib/index.d.ts b/node_modules/@ethersproject/hdnode/lib/index.d.ts
+index 23c283b..3bbfc0c 100644
+--- a/node_modules/@ethersproject/hdnode/lib/index.d.ts
++++ b/node_modules/@ethersproject/hdnode/lib/index.d.ts
+@@ -31,11 +31,11 @@ export declare class HDNode implements ExternallyOwnedAccount {
+     private _derive;
+     derivePath(path: string): HDNode;
+     static _fromSeed(seed: BytesLike, mnemonic: Mnemonic): HDNode;
+-    static fromMnemonic(mnemonic: string, password?: string, wordlist?: string | Wordlist): HDNode;
++    static fromMnemonic(mnemonic: string, password?: string, wordlist?: string | Wordlist): Promise<HDNode>;
+     static fromSeed(seed: BytesLike): HDNode;
+     static fromExtendedKey(extendedKey: string): HDNode;
+ }
+-export declare function mnemonicToSeed(mnemonic: string, password?: string): string;
++export declare function mnemonicToSeed(mnemonic: string, password?: string): Promise<string>;
+ export declare function mnemonicToEntropy(mnemonic: string, wordlist?: string | Wordlist): string;
+ export declare function entropyToMnemonic(entropy: BytesLike, wordlist?: string | Wordlist): string;
+ export declare function isValidMnemonic(mnemonic: string, wordlist?: Wordlist): boolean;
+diff --git a/node_modules/@ethersproject/hdnode/lib/index.js b/node_modules/@ethersproject/hdnode/lib/index.js
+index 39f4312..c2cea41 100644
+--- a/node_modules/@ethersproject/hdnode/lib/index.js
++++ b/node_modules/@ethersproject/hdnode/lib/index.js
+@@ -5,14 +5,17 @@ var basex_1 = require("@ethersproject/basex");
+ var bytes_1 = require("@ethersproject/bytes");
+ var bignumber_1 = require("@ethersproject/bignumber");
+ var strings_1 = require("@ethersproject/strings");
+-var pbkdf2_1 = require("@ethersproject/pbkdf2");
++var AES_js_1 = require("react-native-aes-crypto");
+ var properties_1 = require("@ethersproject/properties");
+ var signing_key_1 = require("@ethersproject/signing-key");
+ var sha2_1 = require("@ethersproject/sha2");
+ var transactions_1 = require("@ethersproject/transactions");
+ var wordlists_1 = require("@ethersproject/wordlists");
++var buffer_1 = require("buffer");
+ var logger_1 = require("@ethersproject/logger");
+ var _version_1 = require("./_version");
++const { resolve } = require("path");
++const { rejects } = require("assert");
+ var logger = new logger_1.Logger(_version_1.version);
+ var N = bignumber_1.BigNumber.from("0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141");
+ // "Bitcoin seed"
+@@ -211,15 +214,25 @@ var HDNode = /** @class */ (function () {
+         return new HDNode(_constructorGuard, bytes32(I.slice(0, 32)), null, "0x00000000", bytes32(I.slice(32)), 0, 0, mnemonic);
+     };
+     HDNode.fromMnemonic = function (mnemonic, password, wordlist) {
+-        // If a locale name was passed in, find the associated wordlist
+-        wordlist = getWordlist(wordlist);
+-        // Normalize the case and spacing in the mnemonic (throws if the mnemonic is invalid)
+-        mnemonic = entropyToMnemonic(mnemonicToEntropy(mnemonic, wordlist), wordlist);
+-        return HDNode._fromSeed(mnemonicToSeed(mnemonic, password), {
+-            phrase: mnemonic,
+-            path: "m",
+-            locale: wordlist.locale
++        return new Promise((resolve,reject)=>{
++            // If a locale name was passed in, find the associated wordlist
++            wordlist = getWordlist(wordlist);
++            // Normalize the case and spacing in the mnemonic (throws if the mnemonic is invalid)
++            mnemonic = entropyToMnemonic(mnemonicToEntropy(mnemonic, wordlist), wordlist);
++
++            mnemonicToSeed(mnemonic, password)
++            .then(seed=>{
++                resolve(HDNode._fromSeed(seed, {
++                    phrase: mnemonic,
++                    path: "m",
++                    locale: wordlist.locale
++                }));
++            })
++            .catch(err=>{
++                reject(err);
++            });
+         });
++        
+     };
+     HDNode.fromSeed = function (seed) {
+         return HDNode._fromSeed(seed, null);
+@@ -253,11 +266,18 @@ var HDNode = /** @class */ (function () {
+ }());
+ exports.HDNode = HDNode;
+ function mnemonicToSeed(mnemonic, password) {
+-    if (!password) {
+-        password = "";
+-    }
+-    var salt = (0, strings_1.toUtf8Bytes)("mnemonic" + password, strings_1.UnicodeNormalizationForm.NFKD);
+-    return (0, pbkdf2_1.pbkdf2)((0, strings_1.toUtf8Bytes)(mnemonic, strings_1.UnicodeNormalizationForm.NFKD), salt, 2048, 64, "sha512");
++    return new Promise((resolve,reject)=>{
++        if (!password) {
++            password = "";
++        }
++        AES_js_1.default.pbkdf2(mnemonic, "mnemonic" + password, 2048, 64*8)
++        .then(resString=>{
++            resolve('0x'+resString);
++        })
++        .catch(err=>{
++            reject(err);
++        })
++    });
+ }
+ exports.mnemonicToSeed = mnemonicToSeed;
+ function mnemonicToEntropy(mnemonic, wordlist) {
+diff --git a/node_modules/@ethersproject/hdnode/src.ts/index.ts b/node_modules/@ethersproject/hdnode/src.ts/index.ts
+index 194a70f..94470ce 100644
+--- a/node_modules/@ethersproject/hdnode/src.ts/index.ts
++++ b/node_modules/@ethersproject/hdnode/src.ts/index.ts
+@@ -9,7 +9,7 @@ import { Base58 } from "@ethersproject/basex";
+ import { arrayify, BytesLike, concat, hexDataSlice, hexZeroPad, hexlify } from "@ethersproject/bytes";
+ import { BigNumber } from "@ethersproject/bignumber";
+ import { toUtf8Bytes, UnicodeNormalizationForm } from "@ethersproject/strings";
+-import { pbkdf2 } from "@ethersproject/pbkdf2";
++import { Aes } from "react-native-aes-crypto";
+ import { defineReadOnly } from "@ethersproject/properties";
+ import { SigningKey } from "@ethersproject/signing-key";
+ import { computeHmac, ripemd160, sha256, SupportedAlgorithm } from "@ethersproject/sha2";
+@@ -258,18 +258,26 @@ export class HDNode implements ExternallyOwnedAccount {
+         return new HDNode(_constructorGuard, bytes32(I.slice(0, 32)), null, "0x00000000", bytes32(I.slice(32)), 0, 0, mnemonic);
+     }
+ 
+-    static fromMnemonic(mnemonic: string, password?: string, wordlist?: string | Wordlist): HDNode {
+-
+-        // If a locale name was passed in, find the associated wordlist
+-        wordlist = getWordlist(wordlist);
+-
+-        // Normalize the case and spacing in the mnemonic (throws if the mnemonic is invalid)
+-        mnemonic = entropyToMnemonic(mnemonicToEntropy(mnemonic, wordlist), wordlist);
+-
+-        return HDNode._fromSeed(mnemonicToSeed(mnemonic, password), {
+-            phrase: mnemonic,
+-            path: "m",
+-            locale: wordlist.locale
++    static fromMnemonic(mnemonic: string, password?: string, wordlist?: string | Wordlist): Promise<HDNode> {
++
++        return new Promise((resolve,reject)=>{
++            // If a locale name was passed in, find the associated wordlist
++            wordlist = getWordlist(wordlist);
++
++            // Normalize the case and spacing in the mnemonic (throws if the mnemonic is invalid)
++            mnemonic = entropyToMnemonic(mnemonicToEntropy(mnemonic, wordlist), wordlist);
++
++            mnemonicToSeed(mnemonic, password)
++            .then(seed=>{
++                resolve(HDNode._fromSeed(seed, {
++                    phrase: mnemonic,
++                    path: "m",
++                    locale: wordlist.locale
++                }));
++            })
++            .catch(err=>{
++                reject(err);
++            })
+         });
+     }
+ 
+@@ -305,12 +313,19 @@ export class HDNode implements ExternallyOwnedAccount {
+     }
+ }
+ 
+-export function mnemonicToSeed(mnemonic: string, password?: string): string {
+-    if (!password) { password = ""; }
++export function mnemonicToSeed(mnemonic: string, password?: string): Promise<string> {
++    return new Promise((resolve,reject)=>{
++        if (!password) { password = ""; }
+ 
+-    const salt = toUtf8Bytes("mnemonic" + password, UnicodeNormalizationForm.NFKD);
++        Aes.pbkdf2(mnemonic, "mnemonic" + password, 2048, 64)
++        .then(resString=>{
++            resolve('0x' + resString);
++        })
++        .catch(err=>{
++            reject(err);
++        })
++    })
+ 
+-    return pbkdf2(toUtf8Bytes(mnemonic, UnicodeNormalizationForm.NFKD), salt, 2048, 64, "sha512");
+ }
+ 
+ export function mnemonicToEntropy(mnemonic: string, wordlist?: string | Wordlist): string {

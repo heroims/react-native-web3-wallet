@@ -15,6 +15,14 @@ npm install react-native-get-random-values --save
 npx pod-install
 ```
 
+### fix React Native so slow
+```bash
+npm install react-native-scrypt
+npm install react-native-aes-crypto
+```
+move `patches` finder to your root directory, and execute command `patch-package`
+
+
 ## Usage
 
 ### Import

@@ -1,0 +1,1033 @@
+diff --git a/node_modules/@ethersproject/json-wallets/lib.esm/keystore.js b/node_modules/@ethersproject/json-wallets/lib.esm/keystore.js
+index da9e3f6..5bd0ba6 100644
+--- a/node_modules/@ethersproject/json-wallets/lib.esm/keystore.js
++++ b/node_modules/@ethersproject/json-wallets/lib.esm/keystore.js
+@@ -9,16 +9,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
+     });
+ };
+ import aes from "aes-js";
+-import scrypt from "scrypt-js";
++import scrypt from "react-native-scrypt";
+ import { getAddress } from "@ethersproject/address";
+ import { arrayify, concat, hexlify } from "@ethersproject/bytes";
+ import { defaultPath, entropyToMnemonic, HDNode, mnemonicToEntropy } from "@ethersproject/hdnode";
+ import { keccak256 } from "@ethersproject/keccak256";
+-import { pbkdf2 as _pbkdf2 } from "@ethersproject/pbkdf2";
++import { Aes } from "react-native-aes-crypto"
+ import { randomBytes } from "@ethersproject/random";
+ import { Description } from "@ethersproject/properties";
+ import { computeAddress } from "@ethersproject/transactions";
+ import { getPassword, looseArrayify, searchPath, uuidV4, zpad } from "./utils";
++import { toUtf8String } from "@ethersproject/strings";
+ import { Logger } from "@ethersproject/logger";
+ import { version } from "./_version";
+ const logger = new Logger(version);
+@@ -42,66 +43,109 @@ function _decrypt(data, key, ciphertext) {
+     return null;
+ }
+ function _getAccount(data, key) {
+-    const ciphertext = looseArrayify(searchPath(data, "crypto/ciphertext"));
+-    const computedMAC = hexlify(keccak256(concat([key.slice(16, 32), ciphertext]))).substring(2);
+-    if (computedMAC !== searchPath(data, "crypto/mac").toLowerCase()) {
+-        throw new Error("invalid password");
+-    }
+-    const privateKey = _decrypt(data, key.slice(0, 16), ciphertext);
+-    if (!privateKey) {
+-        logger.throwError("unsupported cipher", Logger.errors.UNSUPPORTED_OPERATION, {
+-            operation: "decrypt"
+-        });
+-    }
+-    const mnemonicKey = key.slice(32, 64);
+-    const address = computeAddress(privateKey);
+-    if (data.address) {
+-        let check = data.address.toLowerCase();
+-        if (check.substring(0, 2) !== "0x") {
+-            check = "0x" + check;
++    return new Promise((resolve,reject)=>{
++        const ciphertext = looseArrayify(searchPath(data, "crypto/ciphertext"));
++
++        const computedMAC = hexlify(keccak256(concat([ key.slice(16, 32), ciphertext ]))).substring(2);
++        if (computedMAC !== searchPath(data, "crypto/mac").toLowerCase()) {
++            reject(new Error("invalid password"));
+         }
+-        if (getAddress(check) !== address) {
+-            throw new Error("address mismatch");
++    
++        const privateKey = _decrypt(data, key.slice(0, 16), ciphertext);
++    
++        if (!privateKey) {
++            logger.throwError("unsupported cipher", Logger.errors.UNSUPPORTED_OPERATION, {
++                operation: "decrypt"
++            });
+         }
+-    }
+-    const account = {
+-        _isKeystoreAccount: true,
+-        address: address,
+-        privateKey: hexlify(privateKey)
+-    };
+-    // Version 0.1 x-ethers metadata must contain an encrypted mnemonic phrase
+-    if (searchPath(data, "x-ethers/version") === "0.1") {
+-        const mnemonicCiphertext = looseArrayify(searchPath(data, "x-ethers/mnemonicCiphertext"));
+-        const mnemonicIv = looseArrayify(searchPath(data, "x-ethers/mnemonicCounter"));
+-        const mnemonicCounter = new aes.Counter(mnemonicIv);
+-        const mnemonicAesCtr = new aes.ModeOfOperation.ctr(mnemonicKey, mnemonicCounter);
+-        const path = searchPath(data, "x-ethers/path") || defaultPath;
+-        const locale = searchPath(data, "x-ethers/locale") || "en";
+-        const entropy = arrayify(mnemonicAesCtr.decrypt(mnemonicCiphertext));
+-        try {
+-            const mnemonic = entropyToMnemonic(entropy, locale);
+-            const node = HDNode.fromMnemonic(mnemonic, null, locale).derivePath(path);
+-            if (node.privateKey != account.privateKey) {
+-                throw new Error("mnemonic mismatch");
++    
++        const mnemonicKey = key.slice(32, 64);
++    
++        const address = computeAddress(privateKey);
++        if (data.address) {
++            let check = data.address.toLowerCase();
++            if (check.substring(0, 2) !== "0x") { check = "0x" + check; }
++    
++            if (getAddress(check) !== address) {
++                reject(new Error("address mismatch"));
+             }
+-            account.mnemonic = node.mnemonic;
+         }
+-        catch (error) {
+-            // If we don't have the locale wordlist installed to
+-            // read this mnemonic, just bail and don't set the
+-            // mnemonic
+-            if (error.code !== Logger.errors.INVALID_ARGUMENT || error.argument !== "wordlist") {
+-                throw error;
++    
++        const account = {
++            _isKeystoreAccount: true,
++            address: address,
++            privateKey: hexlify(privateKey)
++        };
++    
++        // Version 0.1 x-ethers metadata must contain an encrypted mnemonic phrase
++        if (searchPath(data, "x-ethers/version") === "0.1") {
++            const mnemonicCiphertext = looseArrayify(searchPath(data, "x-ethers/mnemonicCiphertext"));
++            const mnemonicIv = looseArrayify(searchPath(data, "x-ethers/mnemonicCounter"));
++    
++            const mnemonicCounter = new aes.Counter(mnemonicIv);
++            const mnemonicAesCtr = new aes.ModeOfOperation.ctr(mnemonicKey, mnemonicCounter);
++    
++            const path = searchPath(data, "x-ethers/path") || defaultPath;
++            const locale = searchPath(data, "x-ethers/locale") || "en";
++    
++            const entropy = arrayify(mnemonicAesCtr.decrypt(mnemonicCiphertext));
++    
++            try {
++                const mnemonic = entropyToMnemonic(entropy, locale);
++                HDNode.fromMnemonic(mnemonic, null, locale)
++                .then(hdnode=>{
++                    const node = hdnode.derivePath(path);
++    
++                    if (node.privateKey != account.privateKey) {
++                        reject(new Error("mnemonic mismatch"));
++                    }
++        
++                    account.mnemonic = node.mnemonic;
++
++                    resolve(new KeystoreAccount(account));
++
++                })
++                .catch(err=>{
++                    reject(err);
++                })
++    
++                
++    
++            } catch (error) {
++                // If we don't have the locale wordlist installed to
++                // read this mnemonic, just bail and don't set the
++                // mnemonic
++                if (error.code !== Logger.errors.INVALID_ARGUMENT || error.argument !== "wordlist") {
++                    reject(error);
++                }
+             }
+         }
+-    }
+-    return new KeystoreAccount(account);
++        else{
++            resolve(new KeystoreAccount(account));
++        }
++    });
+ }
+ function pbkdf2Sync(passwordBytes, salt, count, dkLen, prfFunc) {
+-    return arrayify(_pbkdf2(passwordBytes, salt, count, dkLen, prfFunc));
++    var resString;
++    var finished = false;
++    Aes.pbkdf2(toUtf8String(passwordBytes), toUtf8String(salt), count, dkLen)
++        .then(function (res) {
++        resString = res;
++    }).finally(function (err) {
++        finished = true;
++    });
++    while (!finished) { }
++    return arrayify(Buffer.from(resString, 'hex'));
+ }
+ function pbkdf2(passwordBytes, salt, count, dkLen, prfFunc) {
+-    return Promise.resolve(pbkdf2Sync(passwordBytes, salt, count, dkLen, prfFunc));
++    return new Promise(function (resolve, reject) {
++        Aes.pbkdf2(toUtf8String(passwordBytes), toUtf8String(salt), count, dkLen)
++            .then(function (res) {
++            resolve(arrayify(Buffer.from(res, 'hex')));
++        }).catch(function (err) {
++            reject(err);
++        });
++    });
+ }
+ function _computeKdfKey(data, password, pbkdf2Func, scryptFunc, progressCallback) {
+     const passwordBytes = getPassword(password);
+@@ -165,34 +209,55 @@ export function decrypt(json, password, progressCallback) {
+     });
+ }
+ export function encrypt(account, password, options, progressCallback) {
+-    try {
+-        // Check the address matches the private key
+-        if (getAddress(account.address) !== computeAddress(account.privateKey)) {
+-            throw new Error("address/privateKey mismatch");
+-        }
+-        // Check the mnemonic (if any) matches the private key
+-        if (hasMnemonic(account)) {
+-            const mnemonic = account.mnemonic;
+-            const node = HDNode.fromMnemonic(mnemonic.phrase, null, mnemonic.locale).derivePath(mnemonic.path || defaultPath);
+-            if (node.privateKey != account.privateKey) {
+-                throw new Error("mnemonic mismatch");
++    return new Promise((resolve,reject)=>{
++        try {
++            // Check the address matches the private key
++            if (getAddress(account.address) !== computeAddress(account.privateKey)) {
++                throw new Error("address/privateKey mismatch");
+             }
++
++            // Check the mnemonic (if any) matches the private key
++            if (hasMnemonic(account)) {
++                const mnemonic = account.mnemonic;
++                HDNode.fromMnemonic(mnemonic.phrase, null, mnemonic.locale)
++                .then(hdnode=>{
++                    const node = hdnode.derivePath(mnemonic.path || defaultPath);
++    
++                    if (node.privateKey != account.privateKey) {
++                        reject(new Error("mnemonic mismatch"));
++                    } 
++
++                    encryptSub(account, password, options, progressCallback,resolve,reject);
++
++                })
++                .catch(err=>{
++                    reject(err);
++                })
++            }
++            else{
++                encryptSub(account, password, options, progressCallback,resolve,reject);
++            }
++    
++        } catch (e) {
++            reject(e);
+         }
+-    }
+-    catch (e) {
+-        return Promise.reject(e);
+-    }
++
++    })
++    
++}
++
++function encryptSub(account, password, options, progressCallback,resolve,reject){
+     // The options are optional, so adjust the call as needed
+-    if (typeof (options) === "function" && !progressCallback) {
++    if (typeof(options) === "function" && !progressCallback) {
+         progressCallback = options;
+         options = {};
+     }
+-    if (!options) {
+-        options = {};
+-    }
++    if (!options) { options = {}; }
++
+     const privateKey = arrayify(account.privateKey);
+     const passwordBytes = getPassword(password);
+-    let entropy = null;
++
++    let entropy = null
+     let path = null;
+     let locale = null;
+     if (hasMnemonic(account)) {
+@@ -201,70 +266,71 @@ export function encrypt(account, password, options, progressCallback) {
+         path = srcMnemonic.path || defaultPath;
+         locale = srcMnemonic.locale || "en";
+     }
++
+     let client = options.client;
+-    if (!client) {
+-        client = "ethers.js";
+-    }
++    if (!client) { client = "ethers.js"; }
++
+     // Check/generate the salt
+     let salt = null;
+     if (options.salt) {
+         salt = arrayify(options.salt);
++    } else {
++        salt = randomBytes(32);;
+     }
+-    else {
+-        salt = randomBytes(32);
+-        ;
+-    }
++
+     // Override initialization vector
+     let iv = null;
+     if (options.iv) {
+         iv = arrayify(options.iv);
+-        if (iv.length !== 16) {
+-            throw new Error("invalid iv");
+-        }
+-    }
+-    else {
+-        iv = randomBytes(16);
++        if (iv.length !== 16) { throw new Error("invalid iv"); }
++    } else {
++    iv = randomBytes(16);
+     }
++
+     // Override the uuid
+     let uuidRandom = null;
+     if (options.uuid) {
+         uuidRandom = arrayify(options.uuid);
+-        if (uuidRandom.length !== 16) {
+-            throw new Error("invalid uuid");
+-        }
+-    }
+-    else {
++        if (uuidRandom.length !== 16) { throw new Error("invalid uuid"); }
++    } else {
+         uuidRandom = randomBytes(16);
+     }
++
+     // Override the scrypt password-based key derivation function parameters
+     let N = (1 << 17), r = 8, p = 1;
+     if (options.scrypt) {
+-        if (options.scrypt.N) {
+-            N = options.scrypt.N;
+-        }
+-        if (options.scrypt.r) {
+-            r = options.scrypt.r;
+-        }
+-        if (options.scrypt.p) {
+-            p = options.scrypt.p;
+-        }
++        if (options.scrypt.N) { N = options.scrypt.N; }
++        if (options.scrypt.r) { r = options.scrypt.r; }
++        if (options.scrypt.p) { p = options.scrypt.p; }
+     }
+     // We take 64 bytes:
+     //   - 32 bytes   As normal for the Web3 secret storage (derivedKey, macPrefix)
+     //   - 32 bytes   AES key to encrypt mnemonic with (required here to be Ethers Wallet)
+-    return scrypt.scrypt(passwordBytes, salt, N, r, p, 64, progressCallback).then((key) => {
++    scrypt.scrypt(passwordBytes, salt, N, r, p, 64, progressCallback).then((key) => {
+         key = arrayify(key);
++
+         // This will be used to encrypt the wallet (as per Web3 secret storage)
+         const derivedKey = key.slice(0, 16);
+         const macPrefix = key.slice(16, 32);
++
+         // This will be used to encrypt the mnemonic phrase (if any)
+         const mnemonicKey = key.slice(32, 64);
++
+         // Encrypt the private key
+         const counter = new aes.Counter(iv);
+         const aesCtr = new aes.ModeOfOperation.ctr(derivedKey, counter);
+         const ciphertext = arrayify(aesCtr.encrypt(privateKey));
++        Aes.encrypt(toUtf8String(privateKey),Buffer.from(iv).toString('hex'),Buffer.from(derivedKey).toString('hex'),'aes-128-ctr')
++        .then(function (res){
++            console.log('--------',Buffer.from(res,'hex'));
++            console.log('--------',ciphertext);
++        })
++        .catch(function (err){
++            console.log('--------',err);
++        })
+         // Compute the message authentication code, used to check the password
+-        const mac = keccak256(concat([macPrefix, ciphertext]));
++        const mac = keccak256(concat([macPrefix, ciphertext]))
++
+         // See: https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
+         const data = {
+             address: account.address.substring(2).toLowerCase(),
+@@ -287,6 +353,7 @@ export function encrypt(account, password, options, progressCallback) {
+                 mac: mac.substring(2)
+             }
+         };
++
+         // If we have a mnemonic, encrypt it into the JSON wallet
+         if (entropy) {
+             const mnemonicIv = randomBytes(16);
+@@ -295,11 +362,12 @@ export function encrypt(account, password, options, progressCallback) {
+             const mnemonicCiphertext = arrayify(mnemonicAesCtr.encrypt(entropy));
+             const now = new Date();
+             const timestamp = (now.getUTCFullYear() + "-" +
+-                zpad(now.getUTCMonth() + 1, 2) + "-" +
+-                zpad(now.getUTCDate(), 2) + "T" +
+-                zpad(now.getUTCHours(), 2) + "-" +
+-                zpad(now.getUTCMinutes(), 2) + "-" +
+-                zpad(now.getUTCSeconds(), 2) + ".0Z");
++                            zpad(now.getUTCMonth() + 1, 2) + "-" +
++                            zpad(now.getUTCDate(), 2) + "T" +
++                            zpad(now.getUTCHours(), 2) + "-" +
++                            zpad(now.getUTCMinutes(), 2) + "-" +
++                            zpad(now.getUTCSeconds(), 2) + ".0Z"
++                            );
+             data["x-ethers"] = {
+                 client: client,
+                 gethFilename: ("UTC--" + timestamp + "--" + data.address),
+@@ -310,7 +378,11 @@ export function encrypt(account, password, options, progressCallback) {
+                 version: "0.1"
+             };
+         }
+-        return JSON.stringify(data);
++
++        resolve(JSON.stringify(data));
++    })
++    .catch(err=>{
++        reject(err);
+     });
+ }
+ //# sourceMappingURL=keystore.js.map
+\ No newline at end of file
+diff --git a/node_modules/@ethersproject/json-wallets/lib/keystore.js b/node_modules/@ethersproject/json-wallets/lib/keystore.js
+index 40e4207..7c1085b 100644
+--- a/node_modules/@ethersproject/json-wallets/lib/keystore.js
++++ b/node_modules/@ethersproject/json-wallets/lib/keystore.js
+@@ -56,17 +56,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.encrypt = exports.decrypt = exports.decryptSync = exports.KeystoreAccount = void 0;
+ var aes_js_1 = __importDefault(require("aes-js"));
+-var scrypt_js_1 = __importDefault(require("scrypt-js"));
++var scrypt_js_1 = __importDefault(require("react-native-scrypt"));
++var AES_js_1 = require("react-native-aes-crypto");
+ var address_1 = require("@ethersproject/address");
+ var bytes_1 = require("@ethersproject/bytes");
+ var hdnode_1 = require("@ethersproject/hdnode");
+ var keccak256_1 = require("@ethersproject/keccak256");
+-var pbkdf2_1 = require("@ethersproject/pbkdf2");
+ var random_1 = require("@ethersproject/random");
+ var properties_1 = require("@ethersproject/properties");
+ var transactions_1 = require("@ethersproject/transactions");
+ var utils_1 = require("./utils");
++var strings_1 = require("@ethersproject/strings");
+ var logger_1 = require("@ethersproject/logger");
++var buffer_1 = require("buffer");
+ var _version_1 = require("./_version");
+ var logger = new logger_1.Logger(_version_1.version);
+ // Exported Types
+@@ -95,66 +97,103 @@ function _decrypt(data, key, ciphertext) {
+     return null;
+ }
+ function _getAccount(data, key) {
+-    var ciphertext = (0, utils_1.looseArrayify)((0, utils_1.searchPath)(data, "crypto/ciphertext"));
+-    var computedMAC = (0, bytes_1.hexlify)((0, keccak256_1.keccak256)((0, bytes_1.concat)([key.slice(16, 32), ciphertext]))).substring(2);
+-    if (computedMAC !== (0, utils_1.searchPath)(data, "crypto/mac").toLowerCase()) {
+-        throw new Error("invalid password");
+-    }
+-    var privateKey = _decrypt(data, key.slice(0, 16), ciphertext);
+-    if (!privateKey) {
+-        logger.throwError("unsupported cipher", logger_1.Logger.errors.UNSUPPORTED_OPERATION, {
+-            operation: "decrypt"
+-        });
+-    }
+-    var mnemonicKey = key.slice(32, 64);
+-    var address = (0, transactions_1.computeAddress)(privateKey);
+-    if (data.address) {
+-        var check = data.address.toLowerCase();
+-        if (check.substring(0, 2) !== "0x") {
+-            check = "0x" + check;
+-        }
+-        if ((0, address_1.getAddress)(check) !== address) {
+-            throw new Error("address mismatch");
+-        }
+-    }
+-    var account = {
+-        _isKeystoreAccount: true,
+-        address: address,
+-        privateKey: (0, bytes_1.hexlify)(privateKey)
+-    };
+-    // Version 0.1 x-ethers metadata must contain an encrypted mnemonic phrase
+-    if ((0, utils_1.searchPath)(data, "x-ethers/version") === "0.1") {
+-        var mnemonicCiphertext = (0, utils_1.looseArrayify)((0, utils_1.searchPath)(data, "x-ethers/mnemonicCiphertext"));
+-        var mnemonicIv = (0, utils_1.looseArrayify)((0, utils_1.searchPath)(data, "x-ethers/mnemonicCounter"));
+-        var mnemonicCounter = new aes_js_1.default.Counter(mnemonicIv);
+-        var mnemonicAesCtr = new aes_js_1.default.ModeOfOperation.ctr(mnemonicKey, mnemonicCounter);
+-        var path = (0, utils_1.searchPath)(data, "x-ethers/path") || hdnode_1.defaultPath;
+-        var locale = (0, utils_1.searchPath)(data, "x-ethers/locale") || "en";
+-        var entropy = (0, bytes_1.arrayify)(mnemonicAesCtr.decrypt(mnemonicCiphertext));
++    return new Promise((resolve,reject)=>{
+         try {
+-            var mnemonic = (0, hdnode_1.entropyToMnemonic)(entropy, locale);
+-            var node = hdnode_1.HDNode.fromMnemonic(mnemonic, null, locale).derivePath(path);
+-            if (node.privateKey != account.privateKey) {
+-                throw new Error("mnemonic mismatch");
++            var ciphertext = (0, utils_1.looseArrayify)((0, utils_1.searchPath)(data, "crypto/ciphertext"));
++            var computedMAC = (0, bytes_1.hexlify)((0, keccak256_1.keccak256)((0, bytes_1.concat)([key.slice(16, 32), ciphertext]))).substring(2);
++            if (computedMAC !== (0, utils_1.searchPath)(data, "crypto/mac").toLowerCase()) {
++                throw new Error("invalid password");
+             }
+-            account.mnemonic = node.mnemonic;
+-        }
+-        catch (error) {
+-            // If we don't have the locale wordlist installed to
+-            // read this mnemonic, just bail and don't set the
+-            // mnemonic
+-            if (error.code !== logger_1.Logger.errors.INVALID_ARGUMENT || error.argument !== "wordlist") {
+-                throw error;
++            var privateKey = _decrypt(data, key.slice(0, 16), ciphertext);
++            if (!privateKey) {
++                logger.throwError("unsupported cipher", logger_1.Logger.errors.UNSUPPORTED_OPERATION, {
++                    operation: "decrypt"
++                });
++            }
++            var mnemonicKey = key.slice(32, 64);
++            var address = (0, transactions_1.computeAddress)(privateKey);
++            if (data.address) {
++                var check = data.address.toLowerCase();
++                if (check.substring(0, 2) !== "0x") {
++                    check = "0x" + check;
++                }
++                if ((0, address_1.getAddress)(check) !== address) {
++                    throw new Error("address mismatch");
++                }
++            }
++            var account = {
++                _isKeystoreAccount: true,
++                address: address,
++                privateKey: (0, bytes_1.hexlify)(privateKey)
++            };
++            // Version 0.1 x-ethers metadata must contain an encrypted mnemonic phrase
++            if ((0, utils_1.searchPath)(data, "x-ethers/version") === "0.1") {
++                var mnemonicCiphertext = (0, utils_1.looseArrayify)((0, utils_1.searchPath)(data, "x-ethers/mnemonicCiphertext"));
++                var mnemonicIv = (0, utils_1.looseArrayify)((0, utils_1.searchPath)(data, "x-ethers/mnemonicCounter"));
++                var mnemonicCounter = new aes_js_1.default.Counter(mnemonicIv);
++                var mnemonicAesCtr = new aes_js_1.default.ModeOfOperation.ctr(mnemonicKey, mnemonicCounter);
++                var path = (0, utils_1.searchPath)(data, "x-ethers/path") || hdnode_1.defaultPath;
++                var locale = (0, utils_1.searchPath)(data, "x-ethers/locale") || "en";
++                var entropy = (0, bytes_1.arrayify)(mnemonicAesCtr.decrypt(mnemonicCiphertext));
++                try {
++                    var mnemonic = (0, hdnode_1.entropyToMnemonic)(entropy, locale);
++                    hdnode_1.HDNode.fromMnemonic(mnemonic, null, locale)
++                    .then(resNode=>{
++                        console.log('nodess',resNode);
++
++                        var node = resNode.derivePath(path);
++                        if (node.privateKey != account.privateKey) {
++                            reject(new Error("mnemonic mismatch"));
++                        }
++                        account.mnemonic = node.mnemonic;
++                        resolve(new KeystoreAccount(account)); 
++
++                    })
++                    .catch(err=>{
++                        reject(err);
++
++                    })
++                }
++                catch (error) {
++                    // If we don't have the locale wordlist installed to
++                    // read this mnemonic, just bail and don't set the
++                    // mnemonic
++                    if (error.code !== logger_1.Logger.errors.INVALID_ARGUMENT || error.argument !== "wordlist") {
++                        throw error;
++                    }
++                }
++            }
++            else{
++                resolve(new KeystoreAccount(account)); 
+             }
++        } catch (error) {
++            reject(error);
+         }
+-    }
+-    return new KeystoreAccount(account);
++    })
++
++    
+ }
+ function pbkdf2Sync(passwordBytes, salt, count, dkLen, prfFunc) {
+-    return (0, bytes_1.arrayify)((0, pbkdf2_1.pbkdf2)(passwordBytes, salt, count, dkLen, prfFunc));
++    var resString;
++    var finished = false;
++    AES_js_1.Aes.pbkdf2((0, strings_1.toUtf8String)(passwordBytes), (0, strings_1.toUtf8String)(salt), count, dkLen)
++        .then(function (res) {
++        resString = res;
++    }).finally(function (err) {
++        finished = true;
++    });
++    while (!finished) { }
++    return (0, bytes_1.arrayify)(Buffer.from(resString, 'hex'));
+ }
+ function pbkdf2(passwordBytes, salt, count, dkLen, prfFunc) {
+-    return Promise.resolve(pbkdf2Sync(passwordBytes, salt, count, dkLen, prfFunc));
++    return new Promise(function (resolve, reject) {
++        AES_js_1.Aes.pbkdf2((0, strings_1.toUtf8String)(passwordBytes), (0, strings_1.toUtf8String)(salt), count, dkLen)
++            .then(function (res) {
++            resolve((0, bytes_1.arrayify)(Buffer.from(res, 'hex')));
++        })["catch"](function (err) {
++            reject(err);
++        });
++    });
+ }
+ function _computeKdfKey(data, password, pbkdf2Func, scryptFunc, progressCallback) {
+     var passwordBytes = (0, utils_1.getPassword)(password);
+@@ -210,7 +249,7 @@ function decryptSync(json, password) {
+     var key = _computeKdfKey(data, password, pbkdf2Sync, scrypt_js_1.default.syncScrypt);
+     return _getAccount(data, key);
+ }
+-exports.decryptSync = decryptSync;
++// exports.decryptSync = decryptSync;
+ function decrypt(json, password, progressCallback) {
+     return __awaiter(this, void 0, void 0, function () {
+         var data, key;
+@@ -228,23 +267,42 @@ function decrypt(json, password, progressCallback) {
+ }
+ exports.decrypt = decrypt;
+ function encrypt(account, password, options, progressCallback) {
+-    try {
+-        // Check the address matches the private key
+-        if ((0, address_1.getAddress)(account.address) !== (0, transactions_1.computeAddress)(account.privateKey)) {
+-            throw new Error("address/privateKey mismatch");
+-        }
+-        // Check the mnemonic (if any) matches the private key
+-        if (hasMnemonic(account)) {
+-            var mnemonic = account.mnemonic;
+-            var node = hdnode_1.HDNode.fromMnemonic(mnemonic.phrase, null, mnemonic.locale).derivePath(mnemonic.path || hdnode_1.defaultPath);
+-            if (node.privateKey != account.privateKey) {
+-                throw new Error("mnemonic mismatch");
++    return new Promise((resolve, reject)=>{
++        try {
++            // Check the address matches the private key
++            if ((0, address_1.getAddress)(account.address) !== (0, transactions_1.computeAddress)(account.privateKey)) {
++                throw new Error("address/privateKey mismatch");
++            }
++            // Check the mnemonic (if any) matches the private key
++            if (hasMnemonic(account)) {
++                var mnemonic = account.mnemonic;
++
++                hdnode_1.HDNode.fromMnemonic(mnemonic.phrase, null, mnemonic.locale)
++                .then(hdnode=>{
++                    var node = hdnode.derivePath(mnemonic.path || hdnode_1.defaultPath)
++                    if (node.privateKey != account.privateKey) {
++                        reject(new Error("mnemonic mismatch"));
++                    }
++
++                    encryptSub(account, password, options, progressCallback,resolve,reject);
++
++                })
++                .catch(err=>{
++                    reject(err); 
++                })                
+             }
++            else{
++                encryptSub(account, password, options, progressCallback,resolve,reject);
++            }
++
+         }
+-    }
+-    catch (e) {
+-        return Promise.reject(e);
+-    }
++        catch (e) {
++            reject(e);
++        }
++    });
++}
++
++function encryptSub(account, password, options, progressCallback,resolve,reject){
+     // The options are optional, so adjust the call as needed
+     if (typeof (options) === "function" && !progressCallback) {
+         progressCallback = options;
+@@ -282,7 +340,7 @@ function encrypt(account, password, options, progressCallback) {
+     if (options.iv) {
+         iv = (0, bytes_1.arrayify)(options.iv);
+         if (iv.length !== 16) {
+-            throw new Error("invalid iv");
++            reject(new Error("invalid iv"));
+         }
+     }
+     else {
+@@ -293,7 +351,7 @@ function encrypt(account, password, options, progressCallback) {
+     if (options.uuid) {
+         uuidRandom = (0, bytes_1.arrayify)(options.uuid);
+         if (uuidRandom.length !== 16) {
+-            throw new Error("invalid uuid");
++            reject(new Error("invalid uuid"));
+         }
+     }
+     else {
+@@ -312,10 +370,12 @@ function encrypt(account, password, options, progressCallback) {
+             p = options.scrypt.p;
+         }
+     }
++
+     // We take 64 bytes:
+     //   - 32 bytes   As normal for the Web3 secret storage (derivedKey, macPrefix)
+     //   - 32 bytes   AES key to encrypt mnemonic with (required here to be Ethers Wallet)
+-    return scrypt_js_1.default.scrypt(passwordBytes, salt, N, r, p, 64, progressCallback).then(function (key) {
++    scrypt_js_1.default.scrypt(passwordBytes, salt, N, r, p, 64, progressCallback)
++    .then(function (key) {
+         key = (0, bytes_1.arrayify)(key);
+         // This will be used to encrypt the wallet (as per Web3 secret storage)
+         var derivedKey = key.slice(0, 16);
+@@ -323,9 +383,13 @@ function encrypt(account, password, options, progressCallback) {
+         // This will be used to encrypt the mnemonic phrase (if any)
+         var mnemonicKey = key.slice(32, 64);
+         // Encrypt the private key
++        var start = performance.now();
++
+         var counter = new aes_js_1.default.Counter(iv);
+         var aesCtr = new aes_js_1.default.ModeOfOperation.ctr(derivedKey, counter);
+         var ciphertext = (0, bytes_1.arrayify)(aesCtr.encrypt(privateKey));
++        var end = performance.now();
++        console.log('aes done', `${end - start}ms\n`);
+         // Compute the message authentication code, used to check the password
+         var mac = (0, keccak256_1.keccak256)((0, bytes_1.concat)([macPrefix, ciphertext]));
+         // See: https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
+@@ -373,7 +437,10 @@ function encrypt(account, password, options, progressCallback) {
+                 version: "0.1"
+             };
+         }
+-        return JSON.stringify(data);
++        resolve(JSON.stringify(data));
++    })
++    .catch(err=>{
++        reject(err); 
+     });
+ }
+ exports.encrypt = encrypt;
+diff --git a/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts b/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts
+index 41ea298..73e36a9 100644
+--- a/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts
++++ b/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts
+@@ -1,19 +1,20 @@
+ "use strict";
+ 
+ import aes from "aes-js";
+-import scrypt from "scrypt-js";
++import scrypt from "react-native-scrypt";
+ 
+ import { ExternallyOwnedAccount } from "@ethersproject/abstract-signer";
+ import { getAddress } from "@ethersproject/address";
+ import { arrayify, Bytes, BytesLike, concat, hexlify } from "@ethersproject/bytes";
+ import { defaultPath, entropyToMnemonic, HDNode, Mnemonic, mnemonicToEntropy } from "@ethersproject/hdnode";
+ import { keccak256 } from "@ethersproject/keccak256";
+-import { pbkdf2 as _pbkdf2 } from "@ethersproject/pbkdf2";
++import { Aes } from "react-native-aes-crypto"
+ import { randomBytes } from "@ethersproject/random";
+ import { Description } from "@ethersproject/properties";
+ import { computeAddress } from "@ethersproject/transactions";
+ 
+ import { getPassword, looseArrayify, searchPath, uuidV4, zpad } from "./utils";
++import { toUtf8String } from "@ethersproject/strings";
+ 
+ import { Logger } from "@ethersproject/logger";
+ import { version } from "./_version";
+@@ -74,85 +75,119 @@ function _decrypt(data: any, key: Uint8Array, ciphertext: Uint8Array): Uint8Arra
+     return null;
+ }
+ 
+-function _getAccount(data: any, key: Uint8Array): KeystoreAccount {
+-    const ciphertext = looseArrayify(searchPath(data, "crypto/ciphertext"));
++function _getAccount(data: any, key: Uint8Array): Promise<KeystoreAccount> {
++    return new Promise((resolve,reject)=>{
++        const ciphertext = looseArrayify(searchPath(data, "crypto/ciphertext"));
+ 
+-    const computedMAC = hexlify(keccak256(concat([ key.slice(16, 32), ciphertext ]))).substring(2);
+-    if (computedMAC !== searchPath(data, "crypto/mac").toLowerCase()) {
+-        throw new Error("invalid password");
+-    }
++        const computedMAC = hexlify(keccak256(concat([ key.slice(16, 32), ciphertext ]))).substring(2);
++        if (computedMAC !== searchPath(data, "crypto/mac").toLowerCase()) {
++            reject(new Error("invalid password"));
++        }
+     
+-    const privateKey = _decrypt(data, key.slice(0, 16), ciphertext);
++        const privateKey = _decrypt(data, key.slice(0, 16), ciphertext);
+     
+-    if (!privateKey) {
+-        logger.throwError("unsupported cipher", Logger.errors.UNSUPPORTED_OPERATION, {
+-            operation: "decrypt"
+-        });
+-    }
++        if (!privateKey) {
++            logger.throwError("unsupported cipher", Logger.errors.UNSUPPORTED_OPERATION, {
++                operation: "decrypt"
++            });
++        }
+     
+-    const mnemonicKey = key.slice(32, 64);
++        const mnemonicKey = key.slice(32, 64);
+     
+-    const address = computeAddress(privateKey);
+-    if (data.address) {
+-        let check = data.address.toLowerCase();
+-        if (check.substring(0, 2) !== "0x") { check = "0x" + check; }
++        const address = computeAddress(privateKey);
++        if (data.address) {
++            let check = data.address.toLowerCase();
++            if (check.substring(0, 2) !== "0x") { check = "0x" + check; }
+     
+-        if (getAddress(check) !== address) {
+-            throw new Error("address mismatch");
++            if (getAddress(check) !== address) {
++                reject(new Error("address mismatch"));
++            }
+         }
+-    }
+     
+-    const account: _KeystoreAccount = {
+-        _isKeystoreAccount: true,
+-        address: address,
+-        privateKey: hexlify(privateKey)
+-    };
++        const account: _KeystoreAccount = {
++            _isKeystoreAccount: true,
++            address: address,
++            privateKey: hexlify(privateKey)
++        };
+     
+-    // Version 0.1 x-ethers metadata must contain an encrypted mnemonic phrase
+-    if (searchPath(data, "x-ethers/version") === "0.1") {
+-        const mnemonicCiphertext = looseArrayify(searchPath(data, "x-ethers/mnemonicCiphertext"));
+-        const mnemonicIv = looseArrayify(searchPath(data, "x-ethers/mnemonicCounter"));
++        // Version 0.1 x-ethers metadata must contain an encrypted mnemonic phrase
++        if (searchPath(data, "x-ethers/version") === "0.1") {
++            const mnemonicCiphertext = looseArrayify(searchPath(data, "x-ethers/mnemonicCiphertext"));
++            const mnemonicIv = looseArrayify(searchPath(data, "x-ethers/mnemonicCounter"));
+     
+-        const mnemonicCounter = new aes.Counter(mnemonicIv);
+-        const mnemonicAesCtr = new aes.ModeOfOperation.ctr(mnemonicKey, mnemonicCounter);
++            const mnemonicCounter = new aes.Counter(mnemonicIv);
++            const mnemonicAesCtr = new aes.ModeOfOperation.ctr(mnemonicKey, mnemonicCounter);
+     
+-        const path = searchPath(data, "x-ethers/path") || defaultPath;
+-        const locale = searchPath(data, "x-ethers/locale") || "en";
++            const path = searchPath(data, "x-ethers/path") || defaultPath;
++            const locale = searchPath(data, "x-ethers/locale") || "en";
+     
+-        const entropy = arrayify(mnemonicAesCtr.decrypt(mnemonicCiphertext));
++            const entropy = arrayify(mnemonicAesCtr.decrypt(mnemonicCiphertext));
+     
+-        try {
+-            const mnemonic = entropyToMnemonic(entropy, locale);
+-            const node = HDNode.fromMnemonic(mnemonic, null, locale).derivePath(path);
++            try {
++                const mnemonic = entropyToMnemonic(entropy, locale);
++                HDNode.fromMnemonic(mnemonic, null, locale)
++                .then(hdnode=>{
++                    const node = hdnode.derivePath(path);
++    
++                    if (node.privateKey != account.privateKey) {
++                        reject(new Error("mnemonic mismatch"));
++                    }
++        
++                    account.mnemonic = node.mnemonic;
++
++                    resolve(new KeystoreAccount(account));
++
++                })
++                .catch(err=>{
++                    reject(err);
++                })
+     
+-            if (node.privateKey != account.privateKey) {
+-                throw new Error("mnemonic mismatch");
+-            }
+                 
+-            account.mnemonic = node.mnemonic;
+     
+-        } catch (error) {
+-            // If we don't have the locale wordlist installed to
+-            // read this mnemonic, just bail and don't set the
+-            // mnemonic
+-            if (error.code !== Logger.errors.INVALID_ARGUMENT || error.argument !== "wordlist") {
+-                throw error;
++            } catch (error) {
++                // If we don't have the locale wordlist installed to
++                // read this mnemonic, just bail and don't set the
++                // mnemonic
++                if (error.code !== Logger.errors.INVALID_ARGUMENT || error.argument !== "wordlist") {
++                    reject(error);
++                }
+             }
+         }
+-    }
++        else{
++            resolve(new KeystoreAccount(account));
++        }
++    });
+     
+-    return new KeystoreAccount(account);
+ }
+ 
+ type ScryptFunc<T> = (pw: Uint8Array, salt: Uint8Array, n: number, r: number, p: number, dkLen: number, callback?: ProgressCallback) => T;
+ type Pbkdf2Func<T> = (pw: Uint8Array, salt: Uint8Array, c: number, dkLen: number, prfFunc: string) => T;
+ 
+ function pbkdf2Sync(passwordBytes: Uint8Array, salt: Uint8Array, count: number, dkLen: number, prfFunc: string): Uint8Array {
+-    return arrayify(_pbkdf2(passwordBytes, salt, count, dkLen, prfFunc));
++    let resString;
++    var finished=false;
++    Aes.pbkdf2(toUtf8String(passwordBytes), toUtf8String(salt), count, dkLen)
++    .then(res=>{
++        resString = res;
++        finished = true;
++    })
++    .catch(err=>{
++        finished =true;
++    });
++    while(!finished){}
++    return arrayify(Buffer.from(resString,'hex'));
+ }
+ 
+ function pbkdf2(passwordBytes: Uint8Array, salt: Uint8Array, count: number, dkLen: number, prfFunc: string): Promise<Uint8Array> {
+-    return Promise.resolve(pbkdf2Sync(passwordBytes, salt, count, dkLen, prfFunc));
++    return new Promise((resolve,reject)=>{
++        Aes.pbkdf2(toUtf8String(passwordBytes), toUtf8String(salt), count, dkLen)
++        .then(res=>{
++            resolve(arrayify(Buffer.from(res,'hex')));
++        })
++        .catch(err=>{
++            reject(err);
++        });
++    });    
+ }
+ 
+ function _computeKdfKey<T>(data: any, password: Bytes | string, pbkdf2Func: Pbkdf2Func<T>, scryptFunc: ScryptFunc<T>, progressCallback?: ProgressCallback): T {
+@@ -225,27 +260,44 @@ export async function decrypt(json: string, password: Bytes | string, progressCa
+ 
+ 
+ export function encrypt(account: ExternallyOwnedAccount, password: Bytes | string, options?: EncryptOptions, progressCallback?: ProgressCallback): Promise<string> {
++    return new Promise((resolve,reject)=>{
++        try {
++            // Check the address matches the private key
++            if (getAddress(account.address) !== computeAddress(account.privateKey)) {
++                throw new Error("address/privateKey mismatch");
++            }
+ 
+-    try {
+-        // Check the address matches the private key
+-        if (getAddress(account.address) !== computeAddress(account.privateKey)) {
+-            throw new Error("address/privateKey mismatch");
+-        }
++            // Check the mnemonic (if any) matches the private key
++            if (hasMnemonic(account)) {
++                const mnemonic = account.mnemonic;
++                HDNode.fromMnemonic(mnemonic.phrase, null, mnemonic.locale)
++                .then(hdnode=>{
++                    const node = hdnode.derivePath(mnemonic.path || defaultPath);
+     
+-        // Check the mnemonic (if any) matches the private key
+-        if (hasMnemonic(account)) {
+-            const mnemonic = account.mnemonic;
+-            const node = HDNode.fromMnemonic(mnemonic.phrase, null, mnemonic.locale).derivePath(mnemonic.path || defaultPath);
++                    if (node.privateKey != account.privateKey) {
++                        reject(new Error("mnemonic mismatch"));
++                    } 
+ 
+-            if (node.privateKey != account.privateKey) {
+-                throw new Error("mnemonic mismatch");
++                    encryptSub(account, password, options, progressCallback,resolve,reject);
++
++                })
++                .catch(err=>{
++                    reject(err);
++                })
++            }
++            else{
++                encryptSub(account, password, options, progressCallback,resolve,reject);
+             }
++    
++        } catch (e) {
++            reject(e);
+         }
+ 
+-    } catch (e) {
+-        return Promise.reject(e);
+-    }
++    })
+     
++}
++
++function encryptSub(account, password, options, progressCallback,resolve,reject){
+     // The options are optional, so adjust the call as needed
+     if (typeof(options) === "function" && !progressCallback) {
+         progressCallback = options;
+@@ -283,7 +335,7 @@ export function encrypt(account: ExternallyOwnedAccount, password: Bytes | strin
+         iv = arrayify(options.iv);
+         if (iv.length !== 16) { throw new Error("invalid iv"); }
+     } else {
+-       iv = randomBytes(16);
++    iv = randomBytes(16);
+     }
+ 
+     // Override the uuid
+@@ -302,11 +354,10 @@ export function encrypt(account: ExternallyOwnedAccount, password: Bytes | strin
+         if (options.scrypt.r) { r = options.scrypt.r; }
+         if (options.scrypt.p) { p = options.scrypt.p; }
+     }
+-
+     // We take 64 bytes:
+     //   - 32 bytes   As normal for the Web3 secret storage (derivedKey, macPrefix)
+     //   - 32 bytes   AES key to encrypt mnemonic with (required here to be Ethers Wallet)
+-    return scrypt.scrypt(passwordBytes, salt, N, r, p, 64, progressCallback).then((key) => {
++    scrypt.scrypt(passwordBytes, salt, N, r, p, 64, progressCallback).then((key) => {
+         key = arrayify(key);
+ 
+         // This will be used to encrypt the wallet (as per Web3 secret storage)
+@@ -320,7 +371,14 @@ export function encrypt(account: ExternallyOwnedAccount, password: Bytes | strin
+         const counter = new aes.Counter(iv);
+         const aesCtr = new aes.ModeOfOperation.ctr(derivedKey, counter);
+         const ciphertext = arrayify(aesCtr.encrypt(privateKey));
+-
++        Aes.encrypt(toUtf8String(privateKey),Buffer.from(iv).toString('hex'),Buffer.from(derivedKey).toString('hex'),'aes-128-ctr')
++        .then(function (res){
++            console.log('--------',Buffer.from(res,'hex'));
++            console.log('--------',ciphertext);
++        })
++        .catch(function (err){
++            console.log('--------',err);
++        })
+         // Compute the message authentication code, used to check the password
+         const mac = keccak256(concat([macPrefix, ciphertext]))
+ 
+@@ -355,12 +413,12 @@ export function encrypt(account: ExternallyOwnedAccount, password: Bytes | strin
+             const mnemonicCiphertext = arrayify(mnemonicAesCtr.encrypt(entropy));
+             const now = new Date();
+             const timestamp = (now.getUTCFullYear() + "-" +
+-                               zpad(now.getUTCMonth() + 1, 2) + "-" +
+-                               zpad(now.getUTCDate(), 2) + "T" +
+-                               zpad(now.getUTCHours(), 2) + "-" +
+-                               zpad(now.getUTCMinutes(), 2) + "-" +
+-                               zpad(now.getUTCSeconds(), 2) + ".0Z"
+-                              );
++                            zpad(now.getUTCMonth() + 1, 2) + "-" +
++                            zpad(now.getUTCDate(), 2) + "T" +
++                            zpad(now.getUTCHours(), 2) + "-" +
++                            zpad(now.getUTCMinutes(), 2) + "-" +
++                            zpad(now.getUTCSeconds(), 2) + ".0Z"
++                            );
+             data["x-ethers"] = {
+                 client: client,
+                 gethFilename: ("UTC--" + timestamp + "--" + data.address),
+@@ -372,6 +430,9 @@ export function encrypt(account: ExternallyOwnedAccount, password: Bytes | strin
+             };
+         }
+ 
+-        return JSON.stringify(data);
++        resolve(JSON.stringify(data));
++    })
++    .catch(err=>{
++        reject(err);
+     });
+ }
