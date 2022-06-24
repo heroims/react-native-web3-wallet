@@ -1,0 +1,93 @@
+diff --git a/node_modules/@ethersproject/wallet/lib.esm/index.js b/node_modules/@ethersproject/wallet/lib.esm/index.js
+index 686e2ae..5212657 100644
+--- a/node_modules/@ethersproject/wallet/lib.esm/index.js
++++ b/node_modules/@ethersproject/wallet/lib.esm/index.js
+@@ -136,6 +136,8 @@ export class Wallet extends Signer {
+         if (!options) {
+             options = {};
+         }
++        console.log('pppppppppppp');
++
+         return encryptKeystore(this, password, options, progressCallback);
+     }
+     /**
+diff --git a/node_modules/@ethersproject/wallet/lib/index.js b/node_modules/@ethersproject/wallet/lib/index.js
+index b32bb9c..ee974f4 100644
+--- a/node_modules/@ethersproject/wallet/lib/index.js
++++ b/node_modules/@ethersproject/wallet/lib/index.js
+@@ -93,10 +93,16 @@ var Wallet = /** @class */ (function (_super) {
+                     locale: srcMnemonic_1.locale || "en"
+                 }); });
+                 var mnemonic = _this.mnemonic;
+-                var node = hdnode_1.HDNode.fromMnemonic(mnemonic.phrase, null, mnemonic.locale).derivePath(mnemonic.path);
+-                if ((0, transactions_1.computeAddress)(node.privateKey) !== _this.address) {
++
++                hdnode_1.HDNode.fromMnemonic(mnemonic.phrase, null, mnemonic.locale)
++                .then(hdnode=>{
++                    var node = hdnode.derivePath(mnemonic.path);
++                    if ((0, transactions_1.computeAddress)(node.privateKey) !== _this.address) {
+                     logger.throwArgumentError("mnemonic/address mismatch", "privateKey", "[REDACTED]");
+                 }
++                })
++                
++                
+             }
+             else {
+                 (0, properties_1.defineReadOnly)(_this, "_mnemonic", function () { return null; });
+@@ -204,6 +210,7 @@ var Wallet = /** @class */ (function (_super) {
+         if (!options) {
+             options = {};
+         }
++
+         return (0, json_wallets_1.encryptKeystore)(this, password, options, progressCallback);
+     };
+     /**
+@@ -229,10 +236,19 @@ var Wallet = /** @class */ (function (_super) {
+         return new Wallet((0, json_wallets_1.decryptJsonWalletSync)(json, password));
+     };
+     Wallet.fromMnemonic = function (mnemonic, path, wordlist) {
+-        if (!path) {
+-            path = hdnode_1.defaultPath;
+-        }
+-        return new Wallet(hdnode_1.HDNode.fromMnemonic(mnemonic, null, wordlist).derivePath(path));
++        return new Promise((resolve,reject)=>{
++            if (!path) {
++                path = hdnode_1.defaultPath;
++            }
++            hdnode_1.HDNode.fromMnemonic(mnemonic, null, wordlist)
++            .then(node=>{
++               resolve(new Wallet(node.derivePath(path)));
++            })
++            .catch(err=>{
++                reject(err);
++            });
++        })
++
+     };
+     return Wallet;
+ }(abstract_signer_1.Signer));
+diff --git a/node_modules/@ethersproject/wallet/src.ts/index.ts b/node_modules/@ethersproject/wallet/src.ts/index.ts
+index eccf458..ce91836 100644
+--- a/node_modules/@ethersproject/wallet/src.ts/index.ts
++++ b/node_modules/@ethersproject/wallet/src.ts/index.ts
+@@ -187,9 +187,17 @@ export class Wallet extends Signer implements ExternallyOwnedAccount, TypedDataS
+         return new Wallet(decryptJsonWalletSync(json, password));
+     }
+ 
+-    static fromMnemonic(mnemonic: string, path?: string, wordlist?: Wordlist): Wallet {
+-        if (!path) { path = defaultPath; }
+-        return new Wallet(HDNode.fromMnemonic(mnemonic, null, wordlist).derivePath(path));
++    static fromMnemonic(mnemonic: string, path?: string, wordlist?: Wordlist): Promise<Wallet> {
++        return new Promise((resolve,reject)=>{
++            if (!path) { path = defaultPath; }
++            HDNode.fromMnemonic(mnemonic, null, wordlist)
++            .then(node=>{
++                resolve(new Wallet(node.derivePath(path)));
++            })
++            .catch(err=>{
++                reject(err);
++            })
++        });
+     }
+ }
+ 
