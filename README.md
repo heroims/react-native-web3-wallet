@@ -20,7 +20,7 @@ npx pod-install
 npm install react-native-scrypt
 npm install react-native-aes-crypto
 ```
-move `patches` finder to your root directory, and execute command `patch-package`
+move `patches` finder to your root directory, and execute command `npx patch-package`
 
 
 ## Usage
