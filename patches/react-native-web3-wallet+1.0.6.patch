@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-web3-wallet/index.js b/node_modules/react-native-web3-wallet/index.js
-index 51551ba..40283af 100644
+index 51551ba..690d1b5 100644
 --- a/node_modules/react-native-web3-wallet/index.js
 +++ b/node_modules/react-native-web3-wallet/index.js
 @@ -37,36 +37,41 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
@@ -14,12 +14,12 @@ index 51551ba..40283af 100644
 +            .then(wallet=>{
 +                end = performance.now();
 +                console.log('wallet init', `${end - start}ms\n`);
-                 
+             
 -            let mnemonicArr = mnemonic.split(' ');
 -            let shuffleMnemonicArr = mnemonicArr.slice().shuffle();
 +                let mnemonicArr = mnemonic.split(' ');
 +                let shuffleMnemonicArr = mnemonicArr.slice().shuffle();
-     
+ 
 -            wallet.encrypt(password).then(res=>{
 -                end = performance.now();
 -                let jsonObj = JSON.parse(res);
@@ -28,7 +28,7 @@ index 51551ba..40283af 100644
 +                    end = performance.now();
 +                    let jsonObj = JSON.parse(res);
 +                    delete jsonObj['x-ethers'];
-                     
+                 
 -                let response = {
 -                    mnemonic : mnemonicArr, 
 -                    keystore : jsonObj,
@@ -51,7 +51,7 @@ index 51551ba..40283af 100644
 +                    if(needPrivateKey){
 +                        response.privateKey=wallet.privateKey;
 +                    }
-     
+ 
 -                fulfill(response)
 +                    fulfill(response);
 +                })
@@ -82,7 +82,31 @@ index 51551ba..40283af 100644
          } catch (error) {
              reject(error);
          }
-@@ -243,25 +253,31 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
+@@ -195,6 +205,23 @@ export function exportPrivateKeyFromKeystore(keystore, password){
+     });
+ }
+ 
++export function exportMnemonicFromKeystore(keystore, password){
++    return new Promise((fulfill, reject)=>{
++        ethers.Wallet.fromEncryptedJson(keystore,password).then(res=>{
++            let mnemonicArr = res.mnemonic.split(' ');
++            let shuffleMnemonicArr = mnemonicArr.slice().shuffle();
++
++            fulfill({
++                mnemonic : mnemonicArr, 
++                shuffleMnemonic : shuffleMnemonicArr,     
++            });
++        })
++        .catch(err=>{
++            reject(err);
++        });
++    });
++}
++
+ export function exportKeystore(keystore, password){
+     return new Promise((fulfill, reject)=>{
+         ethers.Wallet.fromEncryptedJson(keystore,password).then(res=>{
+@@ -243,25 +270,31 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
  export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", needPrivateKey = false, needPublicKey = false){
      return new Promise((fulfill, reject)=>{
          try {
