@@ -1,0 +1,136 @@
+diff --git a/node_modules/react-native-web3-wallet/index.js b/node_modules/react-native-web3-wallet/index.js
+index 1e3198a..b444f4c 100644
+--- a/node_modules/react-native-web3-wallet/index.js
++++ b/node_modules/react-native-web3-wallet/index.js
+@@ -37,35 +37,40 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
+             var end = performance.now();
+             console.log('mnemonic done', `${end - start}ms\n`);
+         
+-            let wallet = ethers.Wallet.fromMnemonic(mnemonic, path);
+-        
+-            end = performance.now();
+-            console.log('wallet init', `${end - start}ms\n`);
+-            
+-            let mnemonicArr = mnemonic.split(' ');
+-            let shuffleMnemonicArr = shuffleArray(mnemonicArr);
+-
+-            wallet.encrypt(password).then(res=>{
+-                end = performance.now();
+-                let jsonObj = JSON.parse(res);
++            ethers.Wallet.fromMnemonic(mnemonic, path)
++                .then(wallet => {
++                    end = performance.now();
++                    console.log('wallet init', `${end - start}ms\n`);
++                    
++                    let mnemonicArr = mnemonic.split(' ');
++                    let shuffleMnemonicArr = shuffleArray(mnemonicArr);
++
++                    wallet.encrypt(password).then(res=>{
++                        end = performance.now();
++                        let jsonObj = JSON.parse(res);
++                        
++                        let response = {
++                            mnemonic : mnemonicArr, 
++                            keystore : jsonObj,
++                            shuffleMnemonic : shuffleMnemonicArr,
++                        };
++                        if(needPublicKey){
++                            response.publicKey=wallet.publicKey;
++                        }
++                        if(needPrivateKey){
++                            response.privateKey=wallet.privateKey;
++                        }
+ 
+-                let response = {
+-                    mnemonic : mnemonicArr, 
+-                    keystore : jsonObj,
+-                    shuffleMnemonic : shuffleMnemonicArr,
+-                };
+-                if(needPublicKey){
+-                    response.publicKey=wallet.publicKey;
+-                }
+-                if(needPrivateKey){
+-                    response.privateKey=wallet.privateKey;
+-                }
++                        fulfill(response)
++                    })
++                    .catch(err=>{
++                        reject(err);
++                    }); 
++                })
++                .catch(err=>{
++                    reject(err);
++                });
+             
+-                fulfill(response)
+-            })
+-            .catch(err=>{
+-                reject(err);
+-            }); 
+         } catch (error) {
+             reject(error);
+         }
+@@ -175,8 +180,13 @@ export function getContractNfts(network, contractAddress, contractAbi, address){
+ export function exportPrivateKeyFromMnemonic(mnemonic, path){
+     return new Promise((fulfill, reject)=>{
+         try {
+-            let wallet = ethers.Wallet.fromMnemonic(mnemonic, path)
+-            fulfill(wallet.privateKey);
++            ethers.Wallet.fromMnemonic(mnemonic, path)
++                .then(wallet => {
++                    fulfill(wallet.privateKey);
++                })
++                .catch(err=>{
++                    reject(err);
++                });
+         } catch (error) {
+             reject(error);
+         }
+@@ -257,24 +267,29 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
+ export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", needPrivateKey = false, needPublicKey = false){
+     return new Promise((fulfill, reject)=>{
+         try {
+-            let wallet = ethers.Wallet.fromMnemonic(mnemonic, path);
+-            wallet.encrypt(password).then(res=>{
+-                let jsonObj = JSON.parse(res);
+-
+-                let response = {
+-                    keystore : jsonObj,
+-                };
+-                if(needPublicKey){
+-                    response.publicKey=res.publicKey;
+-                }
+-                if(needPrivateKey){
+-                    response.privateKey=res.privateKey;
+-                }
+-                fulfill(response);
+-            })
+-            .catch(err=>{
+-                reject(err);
+-            });
++            ethers.Wallet.fromMnemonic(mnemonic, path)
++                .then(wallet => {
++                    wallet.encrypt(password).then(res=>{
++                        let jsonObj = JSON.parse(res);
++        
++                        let response = {
++                            keystore : jsonObj,
++                        };
++                        if(needPublicKey){
++                            response.publicKey=res.publicKey;
++                        }
++                        if(needPrivateKey){
++                            response.privateKey=res.privateKey;
++                        }
++                        fulfill(response);
++                    })
++                    .catch(err=>{
++                        reject(err);
++                    });
++                })
++                .catch(err=>{
++                    reject(err);
++                });
+         } catch (error) {
+             reject(error);
+         }
