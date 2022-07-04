@@ -8,8 +8,8 @@ import "@ethersproject/shims"
 import { ethers } from "ethers";
 
 //Fisher–Yates shuffle
-Array.prototype.shuffle = function () {
-    var array = this;
+export function shuffleArray(origin) {
+    var array = origin.slice();
     var m = array.length,
       t,
       i;
@@ -43,12 +43,11 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
             console.log('wallet init', `${end - start}ms\n`);
             
             let mnemonicArr = mnemonic.split(' ');
-            let shuffleMnemonicArr = mnemonicArr.slice().shuffle();
+            let shuffleMnemonicArr = shuffleArray(mnemonicArr);
 
             wallet.encrypt(password).then(res=>{
                 end = performance.now();
                 let jsonObj = JSON.parse(res);
-                delete jsonObj['x-ethers'];
                 
                 let response = {
                     mnemonic : mnemonicArr, 
@@ -195,6 +194,22 @@ export function exportPrivateKeyFromKeystore(keystore, password){
     });
 }
 
+export function exportMnemonicFromKeystore(keystore, password){
+    return new Promise((fulfill, reject)=>{
+        ethers.Wallet.fromEncryptedJson(keystore,password).then(res=>{
+        	let mnemonicArr = res.mnemonic.split(' ');
+            let shuffleMnemonicArr = mnemonicArr.slice().shuffle();
+            fulfill({
+                mnemonic : mnemonicArr, 
+                shuffleMnemonic : shuffleMnemonicArr,     
+            });
+        })
+        .catch(err=>{
+            reject(err);
+        });
+    });
+}
+
 export function exportKeystore(keystore, password){
     return new Promise((fulfill, reject)=>{
         ethers.Wallet.fromEncryptedJson(keystore,password).then(res=>{
@@ -217,7 +232,6 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
             let wallet = new ethers.Wallet(realPrivatekey);
             wallet.encrypt(password).then(res=>{
                 let jsonObj = JSON.parse(res);
-                delete jsonObj['x-ethers'];
 
                 let response = {
                     keystore : jsonObj,
@@ -246,7 +260,6 @@ export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", ne
             let wallet = ethers.Wallet.fromMnemonic(mnemonic, path);
             wallet.encrypt(password).then(res=>{
                 let jsonObj = JSON.parse(res);
-                delete jsonObj['x-ethers'];
 
                 let response = {
                     keystore : jsonObj,
