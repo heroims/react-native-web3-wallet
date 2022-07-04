@@ -198,7 +198,7 @@ export function exportMnemonicFromKeystore(keystore, password){
     return new Promise((fulfill, reject)=>{
         ethers.Wallet.fromEncryptedJson(keystore,password).then(res=>{
         	let mnemonicArr = res.mnemonic.split(' ');
-            let shuffleMnemonicArr = mnemonicArr.slice().shuffle();
+            let shuffleMnemonicArr = shuffleArray(mnemonicArr);
             fulfill({
                 mnemonic : mnemonicArr, 
                 shuffleMnemonic : shuffleMnemonicArr,     
