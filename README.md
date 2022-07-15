@@ -429,6 +429,45 @@ getSignerContract(
     console.log(err);
   });
 ```
+#### Listen Contract Transcation
+```javascript
+let contract = getContract(
+  rpcURL,
+  contractAddress,
+  erc20ABI,
+);
+let filterTo = contract.filters.Transfer(
+  null,
+  ownAddress,
+);
+contract.on(filterTo, (from, to, amount, event) => {
+  console.log(bigNumberFormatUnits(amount));
+  event.getTransactionReceipt(event.transactionHash).then(console.log);
+  event.getBlock(event.blockNumber).then(res => {
+    let date = new Date(res.timestamp * 1000);
+    console.log(date);
+  });
+  contract.provider.on(event.transactionHash, res => {
+    console.log(JSON.stringify(res));
+    if (res.confirmations > 21) {
+      contract.provider.removeAllListeners(event.transactionHash);
+    }
+  });
+});
+```
+event Print
+```
+{"address": "0xA27F8f580C01Db0682Ce185209FFb84121a2F711", "args": ["0x6025B091C6AB619F8e2F75170EB69dc57040dc6e", "0xaEE480Af938234865e4719119c29188eF4053e38", [Object]], "blockHash": "0x8747bb4712910057daea326c0d2baef80dc198be0df2d18e8f0777ba78db8925", "blockNumber": 9429388, "data": "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000", "decode": [Function anonymous], "event": "Transfer", "eventSignature": "Transfer(address,address,uint256)", "getBlock": [Function anonymous], "getTransaction": [Function anonymous], "getTransactionReceipt": [Function anonymous], "logIndex": 0, "removeListener": [Function anonymous], "removed": false, "topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "0x0000000000000000000000006025b091c6ab619f8e2f75170eb69dc57040dc6e", "0x000000000000000000000000aee480af938234865e4719119c29188ef4053e38"], "transactionHash": "0xc6765aa805ed8c5d846f2f70dc7344348a8b7c44d537ef92eee89e57fff1a1b3", "transactionIndex": 1}
+```
+getTransactionReceipt Print
+```
+{"blockHash": "0xfa7a938b5f9908ac1a06ed11ed2bd346ba963916ab6740f0d198cdbfeba8aee6", "blockNumber": 9429342, "byzantium": true, "confirmations": 1, "contractAddress": null, "cumulativeGasUsed": {"hex": "0xd001", "type": "BigNumber"}, "from": "0x6025B091C6AB619F8e2F75170EB69dc57040dc6e", "gasUsed": {"hex": "0xd001", "type": "BigNumber"}, "logs": [{"address": "0xA27F8f580C01Db0682Ce185209FFb84121a2F711", "blockHash": "0xfa7a938b5f9908ac1a06ed11ed2bd346ba963916ab6740f0d198cdbfeba8aee6", "blockNumber": 9429342, "data": "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000", "logIndex": 0, "topics": [Array], "transactionHash": "0xef37fa6f7ce519f2d0564b31cb31991d2b951df67b0aad01c473fd1ee705e37e", "transactionIndex": 1}], "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000002000000080000000000000000000008000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000010000000000000000000080000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000004000000000000000000000000040000000000000000000000080000000000000000000000000", "status": 1, "to": "0xA27F8f580C01Db0682Ce185209FFb84121a2F711", "transactionHash": "0xef37fa6f7ce519f2d0564b31cb31991d2b951df67b0aad01c473fd1ee705e37e", "transactionIndex": 1, "type": 0}
+```
+getBlock Print
+```
+{"_difficulty": {"hex": "0x06", "type": "BigNumber"}, "difficulty": 6, "extraData": "0x29afa5018b3d9a5099d0ab5077c5ab321b50b802ddc4e9ca6c5e28915ce1afea6e4f857dfbef3a036e8625006c745a8613399329c418a67e3e3e16ef9e5f39c5ecadd80fc33501ef78155cfe9fbf481ed2b385fde38ec13b2d61d5fa14ec059f04c4aece002d81e8327380a1d8f253cf2a1a108293169cde61f1d129e07bcc0ecf05cdef9a4ab1eed385e211905ec9477630cd6b07827485263f75a11bbbf1b23dcfd1a5980ca5f12d803850a5b12f5f074b2cdfffeee323fc30c6e2b3bdecc15c599b368f3625fe58a99e14eeab533714e577159a3a78ff7750d2ddcca9db7e7100", "gasLimit": {"hex": "0x02625a00", "type": "BigNumber"}, "gasUsed": {"hex": "0x9569", "type": "BigNumber"}, "hash": "0x8747bb4712910057daea326c0d2baef80dc198be0df2d18e8f0777ba78db8925", "miner": "0xaCfa98C108D540a5b04Ca3a11B5073C3D6F0b812", "nonce": "0x0000000000000000", "number": 9429388, "parentHash": "0xd133b174187c07aa5a8b92063f6e9994cdb231ba394afaec9c9280b866293392", "timestamp": 1657903483, "transactions": ["0xc6765aa805ed8c5d846f2f70dc7344348a8b7c44d537ef92eee89e57fff1a1b3"]}
+```
+
 #### Get Contract Nfts tokenIds
 ```javascript
 getContractNfts(
