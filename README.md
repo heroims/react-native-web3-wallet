@@ -443,7 +443,54 @@ getContractNfts(
   .catch(err => {
     console.log(err);
   });
+```
+### Get Contract to call nftInfos
+```javascript
+async function getNFTInfos(ownAddress = undefined, page = 0, limit = 0) {
+  const contract = getContract(
+    network,
+    contractAddress,
+    ERC721EnumerableAbi,
+  );
+  var nftCount;
+  if (ownAddress === undefined) {
+    nftCount = await contract.totalSupply();
+  } else {
+    nftCount = await contract.balanceOf(ownAddress);
+  }
 
+  let token_idxs = [...Array(nftCount.toNumber()).keys()];
 
+  if (limit === 0) {
+    limit = token_idxs.length;
+  }
+  let lastPage = Math.ceil(token_idxs / limit);
+  if (page >= 0 && page < lastPage) {
+    token_idxs = token_idxs.slice(page * limit, page * limit + limit);
+  }
+  let nftInfos = [];
 
+  for await (const idx of token_idxs) {
+    var token_id;
+    if (ownAddress === undefined) {
+      token_id = (await contract.tokenByIndex(idx)).toNumber();
+    } else {
+      token_id = (await contract.tokenOfOwnerByIndex(ownAddress, idx)).toNumber();
+    }
+
+    let token_uri = await contract.tokenURI(token_id);
+
+    let nftInfo = {
+      id: token_id,
+      uri: token_uri,
+    };
+
+    if (ownAddress === undefined) {
+      let ownerOf = await contract.ownerOf(token_id);
+      nftInfo.ownerOf = ownerOf;
+    }
+    nftInfos.push(nftInfo);
+  }
+  return nftInfos;
+}
 ```
