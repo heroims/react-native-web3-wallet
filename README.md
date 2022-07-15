@@ -448,7 +448,7 @@ getContractNfts(
 ```javascript
 async function getNFTInfos(ownAddress = undefined, page = 0, limit = 0) {
   const contract = getContract(
-    network,
+    rpcURL,
     contractAddress,
     ERC721EnumerableAbi,
   );
