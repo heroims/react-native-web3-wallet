@@ -637,3 +637,24 @@ export function getWalletSigner(network, keystore, password){
         }
     });
 }
+
+export function getProvider(network){
+    try {
+        var start = performance.now();
+
+        let provider;
+        if(network==='' || network===undefined){
+            provider = new ethers.providers.getDefaultProvider();
+        }
+        else{
+            provider = new ethers.providers.JsonRpcProvider(network);
+        }
+
+        end = performance.now();
+        console.log('provider init', `${end - start}ms\n`);
+
+        return provider;
+    } catch (error) {
+        return undefined;
+    }
+}
