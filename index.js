@@ -658,3 +658,19 @@ export function getProvider(network){
         return undefined;
     }
 }
+
+export function getEventNameID(eventName){
+    return ethers.utils.id(eventName);
+}
+
+export function hexZeroPad(value, length){
+    return ethers.utils.hexZeroPad(value, length);
+}
+
+export function hexString(value){
+    return ethers.utils.hexValue(value);
+}
+
+export function createBigNumber(value){
+    return BigNumber.from(value);
+}
