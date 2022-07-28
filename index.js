@@ -5,7 +5,7 @@ import "react-native-get-random-values"
 import "@ethersproject/shims"
 
 // Import the ethers library
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 
 //Fisher–Yates shuffle
 export function shuffleArray(origin) {
