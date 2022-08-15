@@ -72,106 +72,6 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
     });
 };
 
-export function getBalance(network, address){
-    return new Promise((fulfill, reject)=>{
-        try {
-            let provider;
-            if(network==='' || network===undefined){
-                provider = new ethers.providers.getDefaultProvider();
-            }
-            else{
-                provider = new ethers.providers.JsonRpcProvider(network);
-            }
-            
-            provider.getBalance(address).then(res=>{    
-                fulfill(res);
-            })
-            .catch(err=>{
-                reject(err);
-            }); 
-        } catch (error) {
-            reject(error);
-        }
-    });
-}
-
-export function getContractBalance(network, contractAddress, contractAbi, address){
-    return new Promise((fulfill, reject)=>{
-        try {
-            let provider;
-            if(network==='' || network===undefined){
-                provider = new ethers.providers.getDefaultProvider();
-            }
-            else{
-                provider = new ethers.providers.JsonRpcProvider(network);
-            }
-
-            let contract = new ethers.Contract(contractAddress, contractAbi, provider);
-            
-            contract.balanceOf(address).then(res=>{
-                fulfill(res);
-            })
-            .catch(err=>{
-                reject(err);
-            });
-        } catch (error) {
-            reject(error);
-        }
-        
-    });
-}
-
-export function getContractNfts(network, contractAddress, contractAbi, address){
-    return new Promise((fulfill, reject)=>{
-        try {
-            let provider;
-            if(network==='' || network===undefined){
-                provider = new ethers.providers.getDefaultProvider();
-            }
-            else{
-                provider = new ethers.providers.JsonRpcProvider(network);
-            }
-
-            let contract = new ethers.Contract(contractAddress, contractAbi, provider);
-            
-            contract.queryFilter(contract.filters.Transfer(address, null)).then(sentLogs=>{
-                contract.queryFilter(contract.filters.Transfer(null, address)).then(receivedLogs=>{
-                    const logs = sentLogs.concat(receivedLogs)
-                    .sort(
-                      (a, b) =>
-                        a.blockNumber - b.blockNumber ||
-                        a.transactionIndex - b.TransactionIndex,
-                    );
-
-                    const owned = new Set();
-
-                    function addressEqual(arg1, arg2) {
-                        return arg1.replace('0x','').toLowerCase() == arg2.replace('0x','').toLowerCase();
-                    }
-                    for (const log of logs) {
-                        const { from, to, tokenId } = log.args;
-                        if (addressEqual(to, address)) {
-                        owned.add(tokenId.toString());
-                        } else if (addressEqual(from, address)) {
-                        owned.delete(tokenId.toString());
-                        }
-                    }
-                    fulfill(owned);
-                })
-                .catch(err=>{
-                    reject(err);
-                });
-            })
-            .catch(err=>{
-                reject(err);
-            });
-        } catch (error) {
-            reject(error);
-        }
-        
-    });
-}
-
 export function exportPrivateKeyFromMnemonic(mnemonic, path){
     return new Promise((fulfill, reject)=>{
         try {
@@ -228,7 +128,7 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
             if(privateKey.substring(0,2) !== '0x'){
                 realPrivatekey = '0x' + privateKey;
             }
-            console.log('privatekey', realPrivatekey)
+
             let wallet = new ethers.Wallet(realPrivatekey);
             wallet.encrypt(password).then(res=>{
                 let jsonObj = JSON.parse(res);
@@ -302,7 +202,7 @@ export function importKeystore(keystore, password, needPrivateKey = false, needP
     });
 }
 
-export function getGasPrice(network){
+export function getBalance(network, address){
     return new Promise((fulfill, reject)=>{
         try {
             let provider;
@@ -310,7 +210,127 @@ export function getGasPrice(network){
                 provider = new ethers.providers.getDefaultProvider();
             }
             else{
-                provider = new ethers.providers.JsonRpcProvider(network);
+                if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                    provider = new ethers.providers.JsonRpcProvider(network);
+                }
+                else{
+                    provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+                }
+            }
+            
+            provider.getBalance(address).then(res=>{    
+                fulfill(res);
+            })
+            .catch(err=>{
+                reject(err);
+            }); 
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+export function getContractBalance(network, contractAddress, contractAbi, address, network_detail = {name:'', chainId:'',ensAddress:''}){
+    return new Promise((fulfill, reject)=>{
+        try {
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                    provider = new ethers.providers.JsonRpcProvider(network);
+                }
+                else{
+                    provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+                }
+            }
+
+            let contract = new ethers.Contract(contractAddress, contractAbi, provider);
+            
+            contract.balanceOf(address).then(res=>{
+                fulfill(res);
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+        
+    });
+}
+
+export function getContractNfts(network, contractAddress, contractAbi, address, network_detail = {name:'', chainId:'',ensAddress:''}){
+    return new Promise((fulfill, reject)=>{
+        try {
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                    provider = new ethers.providers.JsonRpcProvider(network);
+                }
+                else{
+                    provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+                }
+            }
+
+            let contract = new ethers.Contract(contractAddress, contractAbi, provider);
+            
+            contract.queryFilter(contract.filters.Transfer(address, null)).then(sentLogs=>{
+                contract.queryFilter(contract.filters.Transfer(null, address)).then(receivedLogs=>{
+                    const logs = sentLogs.concat(receivedLogs)
+                    .sort(
+                      (a, b) =>
+                        a.blockNumber - b.blockNumber ||
+                        a.transactionIndex - b.TransactionIndex,
+                    );
+
+                    const owned = new Set();
+
+                    function addressEqual(arg1, arg2) {
+                        return arg1.replace('0x','').toLowerCase() == arg2.replace('0x','').toLowerCase();
+                    }
+                    for (const log of logs) {
+                        const { from, to, tokenId } = log.args;
+                        if (addressEqual(to, address)) {
+                        owned.add(tokenId.toString());
+                        } else if (addressEqual(from, address)) {
+                        owned.delete(tokenId.toString());
+                        }
+                    }
+                    fulfill(owned);
+                })
+                .catch(err=>{
+                    reject(err);
+                });
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+        
+    });
+}
+
+export function getGasPrice(network, network_detail = {name:'', chainId:'',ensAddress:''}){
+    return new Promise((fulfill, reject)=>{
+        try {
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                    provider = new ethers.providers.JsonRpcProvider(network);
+                }
+                else{
+                    provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+                }
             }
 
             provider.getGasPrice().then(res=>{
@@ -325,7 +345,7 @@ export function getGasPrice(network){
     });
 }
 
-export function getGasLimit(network, fromAddress, toAddress, amount, data){
+export function getGasLimit(network, fromAddress, toAddress, amount, data, network_detail = {name:'', chainId:'',ensAddress:''}){
     return new Promise((fulfill, reject)=>{
         try {
             let provider;
@@ -355,22 +375,19 @@ export function getGasLimit(network, fromAddress, toAddress, amount, data){
     });
 }
 
-export function bigNumberFormatUnits(value , decims = 18){
-    return ethers.utils.formatUnits(value, decims);
-}
-
-export function bigNumberParseUnits(value , decims = 18){
-    return ethers.utils.parseUnits(value, decims);
-}
-
-export function getNonce(network, address, blockTag = 'pending'){
+export function getNonce(network, address, network_detail = {name:'', chainId:'',ensAddress:''}, blockTag = 'pending'){
     return new Promise((fulfill, reject)=>{
         let provider;
         if(network==='' || network===undefined){
             provider = new ethers.providers.getDefaultProvider();
         }
         else{
-            provider = new ethers.providers.JsonRpcProvider(network);
+            if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+            }
         }
         
         provider.getTransactionCount(address, blockTag).then(nonce=>{
@@ -382,7 +399,7 @@ export function getNonce(network, address, blockTag = 'pending'){
     });
 }
 
-export function waitForTransaction(network, transactionHash){
+export function waitForTransaction(network, transactionHash, network_detail = {name:'', chainId:'',ensAddress:''}){
     return new Promise((fulfill, reject)=>{
         try {
             let provider;
@@ -390,7 +407,12 @@ export function waitForTransaction(network, transactionHash){
                 provider = new ethers.providers.getDefaultProvider();
             }
             else{
-                provider = new ethers.providers.JsonRpcProvider(network);
+                if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                    provider = new ethers.providers.JsonRpcProvider(network);
+                }
+                else{
+                    provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+                }
             }
 
             provider.waitForTransaction(transactionHash).then(res=>{
@@ -405,7 +427,7 @@ export function waitForTransaction(network, transactionHash){
     });
 }
 
-export function sendTransaction(network, signedTransaction){
+export function sendTransaction(network, signedTransaction, network_detail = {name:'', chainId:'',ensAddress:''}){
     return new Promise((fulfill, reject)=>{
         try {
             let provider;
@@ -413,7 +435,12 @@ export function sendTransaction(network, signedTransaction){
                 provider = new ethers.providers.getDefaultProvider();
             }
             else{
-                provider = new ethers.providers.JsonRpcProvider(network);
+                if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                    provider = new ethers.providers.JsonRpcProvider(network);
+                }
+                else{
+                    provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+                }
             }
 
             provider.sendTransaction(signedTransaction).then(res=>{
@@ -461,7 +488,7 @@ export function signTransaction(keystore, password, nonce, gasLimit, gasPrice, t
 
 }
 
-export function getContractGasLimit(network, contractAddress, contractAbi, keystore, password, toAddress, amount, decims){
+export function getContractGasLimit(network, contractAddress, contractAbi, keystore, password, toAddress, amount, decims, network_detail = {name:'', chainId:'',ensAddress:''}){
     return new Promise((fulfill, reject)=>{
         try {
             let provider;
@@ -469,7 +496,12 @@ export function getContractGasLimit(network, contractAddress, contractAbi, keyst
                 provider = new ethers.providers.getDefaultProvider();
             }
             else{
-                provider = new ethers.providers.JsonRpcProvider(network);
+                if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                    provider = new ethers.providers.JsonRpcProvider(network);
+                }
+                else{
+                    provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+                }
             }
 
             ethers.Wallet.fromEncryptedJson(keystore, password).then(res=>{
@@ -499,7 +531,7 @@ export function waitForContractTransaction(tx){
     return tx.wait();
 }
 
-export function contractTransaction(network, contractAddress, contractAbi, keystore, password, nonce, gasLimit, gasPrice, toAddress, amount, decims){
+export function contractTransaction(network, contractAddress, contractAbi, keystore, password, nonce, gasLimit, gasPrice, toAddress, amount, decims, network_detail = {name:'', chainId:'',ensAddress:''}){
     return new Promise((fulfill, reject)=>{
         try {
 
@@ -508,7 +540,12 @@ export function contractTransaction(network, contractAddress, contractAbi, keyst
                 provider = new ethers.providers.getDefaultProvider();
             }
             else{
-                provider = new ethers.providers.JsonRpcProvider(network);
+                if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                    provider = new ethers.providers.JsonRpcProvider(network);
+                }
+                else{
+                    provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+                }
             }
 
 
@@ -558,20 +595,20 @@ export function contractTransaction(network, contractAddress, contractAbi, keyst
 
 }
 
-export function getContract(network, contractAddress, contractAbi){
+export function getContract(network, contractAddress, contractAbi, network_detail = {name:'', chainId:'',ensAddress:''}){
     try {
-        var start = performance.now();
-
         let provider;
         if(network==='' || network===undefined){
             provider = new ethers.providers.getDefaultProvider();
         }
         else{
-            provider = new ethers.providers.JsonRpcProvider(network);
+            if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+            }
         }
-
-        end = performance.now();
-        console.log('provider init', `${end - start}ms\n`);
 
         let contract = new ethers.Contract(contractAddress, contractAbi, provider);
         return contract;
@@ -580,7 +617,7 @@ export function getContract(network, contractAddress, contractAbi){
     }
 }
 
-export function getSignerContract(network, contractAddress, contractAbi, keystore, password){
+export function getSignerContract(network, contractAddress, contractAbi, keystore, password, network_detail = {name:'', chainId:'',ensAddress:''}){
     return new Promise((fulfill, reject)=>{
         try {    
             let provider;
@@ -588,7 +625,12 @@ export function getSignerContract(network, contractAddress, contractAbi, keystor
                 provider = new ethers.providers.getDefaultProvider();
             }
             else{
-                provider = new ethers.providers.JsonRpcProvider(network);
+                if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                    provider = new ethers.providers.JsonRpcProvider(network);
+                }
+                else{
+                    provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+                }
             }
     
             ethers.Wallet.fromEncryptedJson(keystore, password).then(res=>{
@@ -607,12 +649,12 @@ export function getSignerContract(network, contractAddress, contractAbi, keystor
     });
 }
 
-export function getSignerContractWithWallet(contractAddress, contractAbi, walletWithSigner){
+export function getSignerContractWithWalletProvider(contractAddress, contractAbi, walletWithSigner){
     let contractWithSigner = new ethers.Contract(contractAddress, contractAbi, walletWithSigner);
     return contractWithSigner;
 }
 
-export function getWalletSigner(network, keystore, password){
+export function getWalletSigner(network, keystore, password, network_detail = {name:'', chainId:'',ensAddress:''}){
     return new Promise((fulfill, reject)=>{
         try {    
             let provider;
@@ -620,7 +662,12 @@ export function getWalletSigner(network, keystore, password){
                 provider = new ethers.providers.getDefaultProvider();
             }
             else{
-                provider = new ethers.providers.JsonRpcProvider(network);
+                if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                    provider = new ethers.providers.JsonRpcProvider(network);
+                }
+                else{
+                    provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+                }
             }
     
             ethers.Wallet.fromEncryptedJson(keystore, password).then(res=>{
@@ -638,25 +685,33 @@ export function getWalletSigner(network, keystore, password){
     });
 }
 
-export function getProvider(network){
+export function getProvider(network, network_detail = {name:'', chainId:'',ensAddress:''}){
     try {
-        var start = performance.now();
-
         let provider;
         if(network==='' || network===undefined){
             provider = new ethers.providers.getDefaultProvider();
         }
         else{
-            provider = new ethers.providers.JsonRpcProvider(network);
+            if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                provider = new ethers.providers.JsonRpcProvider(network);
+            }
+            else{
+                provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+            }
         }
-
-        end = performance.now();
-        console.log('provider init', `${end - start}ms\n`);
 
         return provider;
     } catch (error) {
         return undefined;
     }
+}
+
+export function bigNumberFormatUnits(value , decims = 18){
+    return ethers.utils.formatUnits(value, decims);
+}
+
+export function bigNumberParseUnits(value , decims = 18){
+    return ethers.utils.parseUnits(value, decims);
 }
 
 export function getEventNameID(eventName){
