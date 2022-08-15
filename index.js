@@ -202,7 +202,7 @@ export function importKeystore(keystore, password, needPrivateKey = false, needP
     });
 }
 
-export function getBalance(network, address){
+export function getBalance(network, address, network_detail = {name:'', chainId:'',ensAddress:''}){
     return new Promise((fulfill, reject)=>{
         try {
             let provider;
