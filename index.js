@@ -488,6 +488,52 @@ export function signTransaction(keystore, password, nonce, gasLimit, gasPrice, t
 
 }
 
+export function signMessage(keystore, password, message){
+    return new Promise((fulfill, reject)=>{
+        try {
+            ethers.Wallet.fromEncryptedJson(keystore, password).then(res=>{
+                let wallet = res;
+
+                wallet.signMessage(message).then(res=>{
+                    fulfill(res);
+                })
+                .catch(err=>{
+                    reject(err);
+                });
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+
+}
+
+export function signTypedData(keystore, password, domain, types, value){
+    return new Promise((fulfill, reject)=>{
+        try {
+            ethers.Wallet.fromEncryptedJson(keystore, password).then(res=>{
+                let wallet = res;
+
+                wallet._signTypedData(domain, types, value).then(res=>{
+                    fulfill(res);
+                })
+                .catch(err=>{
+                    reject(err);
+                });
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+
+}
+
 export function getContractGasLimit(network, contractAddress, contractAbi, keystore, password, toAddress, amount, decims, network_detail = {name:'', chainId:'',ensAddress:''}){
     return new Promise((fulfill, reject)=>{
         try {
