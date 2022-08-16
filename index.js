@@ -7,7 +7,13 @@ import "@ethersproject/shims"
 // Import the ethers library
 import { BigNumber, ethers } from "ethers";
 
-//Fisher–Yates shuffle
+/**
+ * Fisher–Yates shuffle
+ *
+ * @export
+ * @param {[]} origin
+ * @return {[]} 
+ */
 export function shuffleArray(origin) {
     var array = origin.slice();
     var m = array.length,
@@ -22,7 +28,17 @@ export function shuffleArray(origin) {
     return array;
 };
 
-
+/**
+ *
+ *
+ * @export
+ * @param {string} password
+ * @param {string} [path="m/44'/60'/0'/0/0"]
+ * @param {number} [seedByte=16]
+ * @param {boolean} [needPrivateKey=false]
+ * @param {boolean} [needPublicKey=false]
+ * @return {Promise<{mnemonic:[],keystore:{},shuffleMnemonic:[],publicKey:'',privateKey:''}>} 
+ */
 export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16, needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
         try {
@@ -72,6 +88,14 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
     });
 };
 
+/**
+ *
+ *
+ * @export
+ * @param {string} mnemonic
+ * @param {string} path
+ * @return {Promise<string>} 
+ */
 export function exportPrivateKeyFromMnemonic(mnemonic, path){
     return new Promise((fulfill, reject)=>{
         try {
@@ -83,6 +107,14 @@ export function exportPrivateKeyFromMnemonic(mnemonic, path){
     });
 }
 
+/**
+ *
+ *
+ * @export
+ * @param {string} keystore
+ * @param {string} password
+ * @return {Promise<string>} 
+ */
 export function exportPrivateKeyFromKeystore(keystore, password){
     return new Promise((fulfill, reject)=>{
         ethers.Wallet.fromEncryptedJson(keystore,password).then(res=>{
@@ -94,6 +126,14 @@ export function exportPrivateKeyFromKeystore(keystore, password){
     });
 }
 
+/**
+ *
+ *
+ * @export
+ * @param {string} keystore
+ * @param {string} password
+ * @return {Promise<string>} 
+ */
 export function exportMnemonicFromKeystore(keystore, password){
     return new Promise((fulfill, reject)=>{
         ethers.Wallet.fromEncryptedJson(keystore,password).then(res=>{
@@ -110,6 +150,14 @@ export function exportMnemonicFromKeystore(keystore, password){
     });
 }
 
+/**
+ *
+ *
+ * @export
+ * @param {string} keystore
+ * @param {string} password
+ * @return {Promise<string>} 
+ */
 export function exportKeystore(keystore, password){
     return new Promise((fulfill, reject)=>{
         ethers.Wallet.fromEncryptedJson(keystore,password).then(res=>{
@@ -121,6 +169,16 @@ export function exportKeystore(keystore, password){
     });
 }
 
+/**
+ *
+ *
+ * @export
+ * @param {string} privateKey
+ * @param {string} password
+ * @param {boolean} [needPrivateKey=false]
+ * @param {boolean} [needPublicKey=false]
+ * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>} 
+ */
 export function importPrivateKey(privateKey, password, needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
         try {
@@ -154,6 +212,17 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
     });
 }
 
+/**
+ *
+ *
+ * @export
+ * @param {string} mnemonic
+ * @param {string} password
+ * @param {string} [path="m/44'/60'/0'/0/0"]
+ * @param {boolean} [needPrivateKey=false]
+ * @param {boolean} [needPublicKey=false]
+ * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>} 
+ */
 export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
         try {
@@ -173,7 +242,7 @@ export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", ne
                 fulfill(response);
             })
             .catch(err=>{
-                reject(err);
+                reject(err);importMnemonic()
             });
         } catch (error) {
             reject(error);
@@ -181,6 +250,16 @@ export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", ne
     });
 }
 
+/**
+ *
+ *
+ * @export
+ * @param {string} keystore
+ * @param {string} password
+ * @param {boolean} [needPrivateKey=false]
+ * @param {boolean} [needPublicKey=false]
+ * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>} 
+ */
 export function importKeystore(keystore, password, needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
         ethers.Wallet.fromEncryptedJson(keystore,password)
@@ -641,6 +720,16 @@ export function contractTransaction(network, contractAddress, contractAbi, keyst
 
 }
 
+/**
+ *
+ *
+ * @export
+ * @param {string|ethers.utils.ConnectionInfo} network
+ * @param {*} contractAddress
+ * @param {{}|ethers.ContractInterface} contractAbi 
+ * @param {{name:'', chainId:'',ensAddress:''}|ethers.providers.Networkish} [network_detail={name:'', chainId:'',ensAddress:''}]
+ * @return  
+ */
 export function getContract(network, contractAddress, contractAbi, network_detail = {name:'', chainId:'',ensAddress:''}){
     try {
         let provider;
@@ -663,6 +752,18 @@ export function getContract(network, contractAddress, contractAbi, network_detai
     }
 }
 
+/**
+ *
+ *
+ * @export
+ * @param {string|ethers.utils.ConnectionInfo} network
+ * @param {string} contractAddress
+ * @param {{}|ethers.ContractInterface} contractAbi 
+ * @param {string} keystore
+ * @param {string} password
+ * @param {{name:'', chainId:'',ensAddress:''}|ethers.providers.Networkish} [network_detail={name:'', chainId:'',ensAddress:''}]
+ * @return {Promise<ethers.Contract>} 
+ */
 export function getSignerContract(network, contractAddress, contractAbi, keystore, password, network_detail = {name:'', chainId:'',ensAddress:''}){
     return new Promise((fulfill, reject)=>{
         try {    
@@ -695,11 +796,28 @@ export function getSignerContract(network, contractAddress, contractAbi, keystor
     });
 }
 
+/**
+ * 
+ * @param {string} contractAddress 
+ * @param {{}|ethers.ContractInterface} contractAbi 
+ * @param {ethers.providers.Provider|ethers.Signer} walletWithSigner 
+ * @returns 
+ */
 export function getSignerContractWithWalletProvider(contractAddress, contractAbi, walletWithSigner){
     let contractWithSigner = new ethers.Contract(contractAddress, contractAbi, walletWithSigner);
     return contractWithSigner;
 }
 
+/**
+ *
+ *
+ * @export
+ * @param {string|ethers.utils.ConnectionInfo} network
+ * @param {string} keystore
+ * @param {string} password
+ * @param {{name:'', chainId:'',ensAddress:''}|ethers.providers.Networkish} [network_detail={name:'', chainId:'',ensAddress:''}]
+ * @return {Promise<ethers.Wallet>} 
+ */
 export function getWalletSigner(network, keystore, password, network_detail = {name:'', chainId:'',ensAddress:''}){
     return new Promise((fulfill, reject)=>{
         try {    
@@ -731,6 +849,14 @@ export function getWalletSigner(network, keystore, password, network_detail = {n
     });
 }
 
+/**
+ *
+ *
+ * @export
+ * @param {string} network
+ * @param {{name:'', chainId:'',ensAddress:''}|ethers.providers.Networkish} [network_detail={name:'', chainId:'',ensAddress:''}]
+ * @return {ethers.providers.Provider|undefined} 
+ */
 export function getProvider(network, network_detail = {name:'', chainId:'',ensAddress:''}){
     try {
         let provider;
@@ -770,6 +896,14 @@ export function hexZeroPad(value, length){
 
 export function hexString(value){
     return ethers.utils.hexValue(value);
+}
+
+export function arrayify(value){
+    return ethers.utils.arrayify(value);
+}
+
+export function hexlify(value){
+    return ethers.utils.hexlify(value);
 }
 
 export function createBigNumber(value){
