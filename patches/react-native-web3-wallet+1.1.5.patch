@@ -1,8 +1,17 @@
 diff --git a/node_modules/react-native-web3-wallet/index.js b/node_modules/react-native-web3-wallet/index.js
-index fd5cfb1..651c08a 100644
+index 8d3cc80..323c09c 100644
 --- a/node_modules/react-native-web3-wallet/index.js
 +++ b/node_modules/react-native-web3-wallet/index.js
-@@ -37,35 +37,40 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
+@@ -39,7 +39,7 @@ export function shuffleArray(origin) {
+  * @param {boolean} [needPublicKey=false]
+  * @return {Promise<{mnemonic:[],keystore:{},shuffleMnemonic:[],publicKey:'',privateKey:''}>} 
+  */
+-export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16, needPrivateKey = false, needPublicKey = false){
++ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16, needPrivateKey = false, needPublicKey = false){
+     return new Promise((fulfill, reject)=>{
+         try {
+             console.log('create begin');
+@@ -53,35 +53,40 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
              var end = performance.now();
              console.log('mnemonic done', `${end - start}ms\n`);
          
@@ -70,8 +79,12 @@ index fd5cfb1..651c08a 100644
          } catch (error) {
              reject(error);
          }
-@@ -75,8 +80,13 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
- export function exportPrivateKeyFromMnemonic(mnemonic, path){
+@@ -96,11 +101,16 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
+  * @param {string} path
+  * @return {Promise<string>} 
+  */
+-export function exportPrivateKeyFromMnemonic(mnemonic, path){
++ export function exportPrivateKeyFromMnemonic(mnemonic, path){
      return new Promise((fulfill, reject)=>{
          try {
 -            let wallet = ethers.Wallet.fromMnemonic(mnemonic, path)
@@ -86,8 +99,12 @@ index fd5cfb1..651c08a 100644
          } catch (error) {
              reject(error);
          }
-@@ -157,24 +167,29 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
- export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", needPrivateKey = false, needPublicKey = false){
+@@ -223,27 +233,32 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
+  * @param {boolean} [needPublicKey=false]
+  * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>} 
+  */
+-export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", needPrivateKey = false, needPublicKey = false){
++ export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", needPrivateKey = false, needPublicKey = false){
      return new Promise((fulfill, reject)=>{
          try {
 -            let wallet = ethers.Wallet.fromMnemonic(mnemonic, path);
@@ -106,7 +123,7 @@ index fd5cfb1..651c08a 100644
 -                fulfill(response);
 -            })
 -            .catch(err=>{
--                reject(err);
+-                reject(err);importMnemonic()
 -            });
 +            ethers.Wallet.fromMnemonic(mnemonic, path)
 +                .then(wallet => {
