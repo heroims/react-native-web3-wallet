@@ -8,27 +8,6 @@ import "@ethersproject/shims"
 import { BigNumber, ethers } from "ethers";
 
 /**
- * Fisher–Yates shuffle
- *
- * @export
- * @param {[]} origin
- * @return {[]} 
- */
-export function shuffleArray(origin) {
-    var array = origin.slice();
-    var m = array.length,
-      t,
-      i;
-    while (m) {
-      i = Math.floor(Math.random() * m--);
-      t = array[m];
-      array[m] = array[i];
-      array[i] = t;
-    }
-    return array;
-};
-
-/**
  *
  *
  * @export
@@ -877,6 +856,18 @@ export function getProvider(network, network_detail = {name:'', chainId:'',ensAd
         return undefined;
     }
 }
+
+/**
+ * Fisher–Yates shuffle
+ *
+ * @export
+ * @param {[]} origin
+ * @return {[]} 
+ */
+export function shuffleArray(origin) {
+    var array = origin.slice();
+    return ethers.utils.shuffled(array);
+};
 
 export function bigNumberFormatUnits(value , decims = 18){
     return ethers.utils.formatUnits(value, decims);
