@@ -1,8 +1,8 @@
 diff --git a/node_modules/react-native-web3-wallet/index.js b/node_modules/react-native-web3-wallet/index.js
-index 8d3cc80..323c09c 100644
+index 882a0db..7ef7144 100644
 --- a/node_modules/react-native-web3-wallet/index.js
 +++ b/node_modules/react-native-web3-wallet/index.js
-@@ -39,7 +39,7 @@ export function shuffleArray(origin) {
+@@ -18,7 +18,7 @@ import { BigNumber, ethers } from "ethers";
   * @param {boolean} [needPublicKey=false]
   * @return {Promise<{mnemonic:[],keystore:{},shuffleMnemonic:[],publicKey:'',privateKey:''}>} 
   */
@@ -11,7 +11,7 @@ index 8d3cc80..323c09c 100644
      return new Promise((fulfill, reject)=>{
          try {
              console.log('create begin');
-@@ -53,35 +53,40 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
+@@ -32,35 +32,40 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
              var end = performance.now();
              console.log('mnemonic done', `${end - start}ms\n`);
          
@@ -79,7 +79,7 @@ index 8d3cc80..323c09c 100644
          } catch (error) {
              reject(error);
          }
-@@ -96,11 +101,16 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
+@@ -75,11 +80,16 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
   * @param {string} path
   * @return {Promise<string>} 
   */
@@ -99,7 +99,7 @@ index 8d3cc80..323c09c 100644
          } catch (error) {
              reject(error);
          }
-@@ -223,27 +233,32 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
+@@ -202,27 +212,32 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
   * @param {boolean} [needPublicKey=false]
   * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>} 
   */
