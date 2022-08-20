@@ -14,7 +14,7 @@ import { IContractABI, ITransaction, IWallet } from "./interface"
  * @param {boolean} [needPublicKey=false]
  * @return {Promise<{mnemonic:[],keystore:{},shuffleMnemonic:[],publicKey:'',privateKey:''}>}
  */
-export declare function createWallet(password: string, path?: string, seedByte?: number, needPrivateKey?: boolean, needPublicKey?: boolean): IWallet;
+export declare function createWallet(password: string, path?: string, seedByte?: number, needPrivateKey?: boolean, needPublicKey?: boolean): Promise<IWallet>;
 
 /**
  *
@@ -24,7 +24,7 @@ export declare function createWallet(password: string, path?: string, seedByte?:
  * @param {string} path
  * @return {Promise<string>}
  */
-export declare function exportPrivateKeyFromMnemonic(mnemonic: string, path: string): string;
+export declare function exportPrivateKeyFromMnemonic(mnemonic: string, path: string): Promise<string>;
 
 /**
  *
@@ -34,7 +34,7 @@ export declare function exportPrivateKeyFromMnemonic(mnemonic: string, path: str
  * @param {string} password
  * @return {Promise<string>}
  */
-export declare function exportPrivateKeyFromKeystore(keystore: string, password: string): string;
+export declare function exportPrivateKeyFromKeystore(keystore: string, password: string): Promise<string>;
 
 /**
  *
@@ -44,7 +44,7 @@ export declare function exportPrivateKeyFromKeystore(keystore: string, password:
  * @param {string} password
  * @return {Promise<string>}
  */
-export declare function exportMnemonicFromKeystore(keystore: string, password: string): string;
+export declare function exportMnemonicFromKeystore(keystore: string, password: string): Promise<string>;
 
 /**
  *
@@ -54,7 +54,7 @@ export declare function exportMnemonicFromKeystore(keystore: string, password: s
  * @param {string} password
  * @return {Promise<string>}
  */
-export declare function exportKeystore(keystore: string, password: string): string;
+export declare function exportKeystore(keystore: string, password: string): Promise<string>;
 
 /**
  *
@@ -66,7 +66,7 @@ export declare function exportKeystore(keystore: string, password: string): stri
  * @param {boolean} [needPublicKey=false]
  * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>}
  */
-export declare function importPrivateKey(privateKey: string, password: string, needPrivateKey?: boolean, needPublicKey?: boolean): Omit<IWallet, 'mnemonic' | 'shuffleMnemonic'>;
+export declare function importPrivateKey(privateKey: string, password: string, needPrivateKey?: boolean, needPublicKey?: boolean): Promise<Omit<IWallet, 'mnemonic' | 'shuffleMnemonic'>>;
 
 /**
  *
@@ -79,7 +79,7 @@ export declare function importPrivateKey(privateKey: string, password: string, n
  * @param {boolean} [needPublicKey=false]
  * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>}
  */
-export declare function importMnemonic(mnemonic: string, password: string, path?: string, needPrivateKey?: boolean, needPublicKey?: boolean): Omit<IWallet, 'mnemonic' | 'shuffleMnemonic'>;
+export declare function importMnemonic(mnemonic: string, password: string, path?: string, needPrivateKey?: boolean, needPublicKey?: boolean): Promise<Omit<IWallet, 'mnemonic' | 'shuffleMnemonic'>>;
 
 /**
  *
@@ -91,7 +91,7 @@ export declare function importMnemonic(mnemonic: string, password: string, path?
  * @param {boolean} [needPublicKey=false]
  * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>}
  */
-export declare function importKeystore(keystore: string, password: string, needPrivateKey?: boolean, needPublicKey?: boolean): Omit<IWallet, 'mnemonic' | 'shuffleMnemonic'>;
+export declare function importKeystore(keystore: string, password: string, needPrivateKey?: boolean, needPublicKey?: boolean): Promise<Omit<IWallet, 'mnemonic' | 'shuffleMnemonic'>>;
 
 export declare function getBalance(network: string, address: string, network_detail?: {
   name: string;
@@ -103,7 +103,7 @@ export declare function getContractBalance(network: string, contractAddress: str
   name: string;
   chainId: number;
   ensAddress: string;
-}): BigNumberish;
+}): Promise<BigNumberish>;
 
 export declare function getContractNfts(network: string, contractAddress: string, contractAbi: IContractABI, address: string, network_detail?: {
   name: string;
@@ -115,25 +115,25 @@ export declare function getGasPrice(network: string, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
-}): BigNumberish;
+}): Promise<BigNumberish>;
 
 export declare function getGasLimit(network: string, fromaddress: string, toaddress: string, amount: number, data: any, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
-}): BigNumberish;
+}): Promise<BigNumberish>;
 
 export declare function getNonce(network: string, address: string, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
-}, blockTag?: string): number;
+}, blockTag?: string): Promise<number>;
 
 export declare function waitForTransaction(network: string, transactionHash: any, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
-}): ITransaction;
+}): Promise<ITransaction>;
 
 export declare function sendTransaction(network: string, signedTransaction: any, network_detail?: {
   name: string;
