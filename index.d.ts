@@ -117,7 +117,7 @@ export declare function getGasPrice(network: string, network_detail?: {
   ensAddress: string;
 }): Promise<BigNumberish>;
 
-export declare function getGasLimit(network: string, fromaddress: string, toaddress: string, amount: number, data: any, network_detail?: {
+export declare function getGasLimit(network: string, fromaddress: string, toaddress: string, amount: string, data: any, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
@@ -141,13 +141,13 @@ export declare function sendTransaction(network: string, signedTransaction: any,
   ensAddress: string;
 }): any;
 
-export declare function signTransaction(keystore: string, password: string, nonce: any, gasLimit: any, gasPrice: any, toaddress: string, chainId: any, amount: number, data: any): any;
+export declare function signTransaction(keystore: string, password: string, nonce: any, gasLimit: any, gasPrice: any, toaddress: string, chainId: any, amount: string, data: any): any;
 
 export declare function signMessage(keystore: string, password: string, message: any): any;
 
 export declare function signTypedData(keystore: string, password: string, domain: any, types: any, value: any): any;
 
-export declare function getContractGasLimit(network: string, contractAddress: string, contractAbi: IContractABI, keystore: string, password: string, toaddress: string, amount: number, decims: any, network_detail?: {
+export declare function getContractGasLimit(network: string, contractAddress: string, contractAbi: IContractABI, keystore: string, password: string, toaddress: string, amount: string, decims: any, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
@@ -155,7 +155,7 @@ export declare function getContractGasLimit(network: string, contractAddress: st
 
 export declare function waitForContractTransaction(tx: any): any;
 
-export declare function contractTransaction(network: string, contractAddress: string, contractAbi: IContractABI, keystore: string, password: string, nonce: any, gasLimit: any, gasPrice: any, toaddress: string, amount: number, decims: any, network_detail?: {
+export declare function contractTransaction(network: string, contractAddress: string, contractAbi: IContractABI, keystore: string, password: string, nonce: any, gasLimit: any, gasPrice: any, toaddress: string, amount: string, decims: any, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
