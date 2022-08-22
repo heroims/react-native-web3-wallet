@@ -1,5 +1,5 @@
 diff --git a/node_modules/@ethersproject/json-wallets/lib.esm/keystore.js b/node_modules/@ethersproject/json-wallets/lib.esm/keystore.js
-index da9e3f6..b0d0c83 100644
+index c0eee41..c05eb92 100644
 --- a/node_modules/@ethersproject/json-wallets/lib.esm/keystore.js
 +++ b/node_modules/@ethersproject/json-wallets/lib.esm/keystore.js
 @@ -9,12 +9,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
@@ -17,34 +17,24 @@ index da9e3f6..b0d0c83 100644
  import { randomBytes } from "@ethersproject/random";
  import { Description } from "@ethersproject/properties";
  import { computeAddress } from "@ethersproject/transactions";
-@@ -80,6 +81,8 @@ function _getAccount(data, key) {
+@@ -80,6 +81,7 @@ function _getAccount(data, key) {
          const entropy = arrayify(mnemonicAesCtr.decrypt(mnemonicCiphertext));
          try {
              const mnemonic = entropyToMnemonic(entropy, locale);
-+            console.log(';;;s;s;ssssss')
 +
              const node = HDNode.fromMnemonic(mnemonic, null, locale).derivePath(path);
              if (node.privateKey != account.privateKey) {
                  throw new Error("mnemonic mismatch");
-@@ -173,6 +176,7 @@ export function encrypt(account, password, options, progressCallback) {
-         // Check the mnemonic (if any) matches the private key
-         if (hasMnemonic(account)) {
-             const mnemonic = account.mnemonic;
-+            console.log('ssdddddddddddddddddd')
-             const node = HDNode.fromMnemonic(mnemonic.phrase, null, mnemonic.locale).derivePath(mnemonic.path || defaultPath);
-             if (node.privateKey != account.privateKey) {
-                 throw new Error("mnemonic mismatch");
-@@ -262,6 +266,8 @@ export function encrypt(account, password, options, progressCallback) {
+@@ -262,6 +264,7 @@ export function encrypt(account, password, options, progressCallback) {
          // Encrypt the private key
          const counter = new aes.Counter(iv);
          const aesCtr = new aes.ModeOfOperation.ctr(derivedKey, counter);
-+        console.log('1111111',derivedKey,iv,privateKey);
 +
          const ciphertext = arrayify(aesCtr.encrypt(privateKey));
          // Compute the message authentication code, used to check the password
          const mac = keccak256(concat([macPrefix, ciphertext]));
 diff --git a/node_modules/@ethersproject/json-wallets/lib/keystore.js b/node_modules/@ethersproject/json-wallets/lib/keystore.js
-index 40e4207..7c1085b 100644
+index e981cf3..a81b8f7 100644
 --- a/node_modules/@ethersproject/json-wallets/lib/keystore.js
 +++ b/node_modules/@ethersproject/json-wallets/lib/keystore.js
 @@ -56,17 +56,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -351,7 +341,7 @@ index 40e4207..7c1085b 100644
  }
  exports.encrypt = encrypt;
 diff --git a/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts b/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts
-index 41ea298..4fce06f 100644
+index 938cb82..3d02c80 100644
 --- a/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts
 +++ b/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts
 @@ -1,19 +1,20 @@
@@ -406,11 +396,11 @@ index 41ea298..4fce06f 100644
 +        .catch(err=>{
 +            reject(err);
 +        });
-+    });    
++    });   
  }
  
  function _computeKdfKey<T>(data: any, password: Bytes | string, pbkdf2Func: Pbkdf2Func<T>, scryptFunc: ScryptFunc<T>, progressCallback?: ProgressCallback): T {
-@@ -225,153 +245,174 @@ export async function decrypt(json: string, password: Bytes | string, progressCa
+@@ -225,153 +245,162 @@ export async function decrypt(json: string, password: Bytes | string, progressCa
  
  
  export function encrypt(account: ExternallyOwnedAccount, password: Bytes | string, options?: EncryptOptions, progressCallback?: ProgressCallback): Promise<string> {
@@ -439,7 +429,7 @@ index 41ea298..4fce06f 100644
 -    } catch (e) {
 -        return Promise.reject(e);
 -    }
-     
+-
 -    // The options are optional, so adjust the call as needed
 -    if (typeof(options) === "function" && !progressCallback) {
 -        progressCallback = options;
@@ -449,160 +439,7 @@ index 41ea298..4fce06f 100644
 -
 -    const privateKey: Uint8Array = arrayify(account.privateKey);
 -    const passwordBytes = getPassword(password);
-+            // Check the mnemonic (if any) matches the private key
-+            if (hasMnemonic(account)) {
-+                const mnemonic = account.mnemonic;
-+                HDNode.fromMnemonic(mnemonic.phrase, null, mnemonic.locale)
-+                .then(hdnode=>{
-+                    const node = hdnode.derivePath(mnemonic.path || defaultPath);
-+    
-+                    if (node.privateKey != account.privateKey) {
-+                        reject(new Error("mnemonic mismatch"));
-+                    } 
-+
-+                    // The options are optional, so adjust the call as needed
-+                    if (typeof(options) === "function" && !progressCallback) {
-+                        progressCallback = options;
-+                        options = {};
-+                    }
-+                    if (!options) { options = {}; }
-+                
-+                    const privateKey: Uint8Array = arrayify(account.privateKey);
-+                    const passwordBytes = getPassword(password);
-+                
-+                    let entropy: Uint8Array = null
-+                    let path: string = null;
-+                    let locale: string = null;
-+                    if (hasMnemonic(account)) {
-+                        const srcMnemonic = account.mnemonic;
-+                        entropy = arrayify(mnemonicToEntropy(srcMnemonic.phrase, srcMnemonic.locale || "en"));
-+                        path = srcMnemonic.path || defaultPath;
-+                        locale = srcMnemonic.locale || "en";
-+                    }
-+                
-+                    let client = options.client;
-+                    if (!client) { client = "ethers.js"; }
-+                
-+                    // Check/generate the salt
-+                    let salt: Uint8Array = null;
-+                    if (options.salt) {
-+                        salt = arrayify(options.salt);
-+                    } else {
-+                        salt = randomBytes(32);;
-+                    }
-+                
-+                    // Override initialization vector
-+                    let iv: Uint8Array = null;
-+                    if (options.iv) {
-+                        iv = arrayify(options.iv);
-+                        if (iv.length !== 16) { throw new Error("invalid iv"); }
-+                    } else {
-+                    iv = randomBytes(16);
-+                    }
-+                
-+                    // Override the uuid
-+                    let uuidRandom: Uint8Array = null;
-+                    if (options.uuid) {
-+                        uuidRandom = arrayify(options.uuid);
-+                        if (uuidRandom.length !== 16) { throw new Error("invalid uuid"); }
-+                    } else {
-+                        uuidRandom = randomBytes(16);
-+                    }
-+                
-+                    // Override the scrypt password-based key derivation function parameters
-+                    let N = (1 << 17), r = 8, p = 1;
-+                    if (options.scrypt) {
-+                        if (options.scrypt.N) { N = options.scrypt.N; }
-+                        if (options.scrypt.r) { r = options.scrypt.r; }
-+                        if (options.scrypt.p) { p = options.scrypt.p; }
-+                    }
-+                    // We take 64 bytes:
-+                    //   - 32 bytes   As normal for the Web3 secret storage (derivedKey, macPrefix)
-+                    //   - 32 bytes   AES key to encrypt mnemonic with (required here to be Ethers Wallet)
-+                    scrypt.scrypt(passwordBytes, salt, N, r, p, 64, progressCallback).then((key) => {
-+                        key = arrayify(key);
-+                
-+                        // This will be used to encrypt the wallet (as per Web3 secret storage)
-+                        const derivedKey = key.slice(0, 16);
-+                        const macPrefix = key.slice(16, 32);
-+                
-+                        // This will be used to encrypt the mnemonic phrase (if any)
-+                        const mnemonicKey = key.slice(32, 64);
-+                
-+                        // Encrypt the private key
-+                        const counter = new aes.Counter(iv);
-+                        const aesCtr = new aes.ModeOfOperation.ctr(derivedKey, counter);
-+                        const ciphertext = arrayify(aesCtr.encrypt(privateKey));
-+                        Aes.encrypt(toUtf8String(privateKey),Buffer.from(iv).toString('hex'),Buffer.from(derivedKey).toString('hex'),'aes-128-ctr')
-+                        .then(function (res){
-+                            console.log('--------',Buffer.from(res,'hex'));
-+                            console.log('--------',ciphertext);
-+                        })
-+                        .catch(function (err){
-+                            console.log('--------',err);
-+                        })
-+                        // Compute the message authentication code, used to check the password
-+                        const mac = keccak256(concat([macPrefix, ciphertext]))
-+                
-+                        // See: https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
-+                        const data: { [key: string]: any } = {
-+                            address: account.address.substring(2).toLowerCase(),
-+                            id: uuidV4(uuidRandom),
-+                            version: 3,
-+                            Crypto: {
-+                                cipher: "aes-128-ctr",
-+                                cipherparams: {
-+                                    iv: hexlify(iv).substring(2),
-+                                },
-+                                ciphertext: hexlify(ciphertext).substring(2),
-+                                kdf: "scrypt",
-+                                kdfparams: {
-+                                    salt: hexlify(salt).substring(2),
-+                                    n: N,
-+                                    dklen: 32,
-+                                    p: p,
-+                                    r: r
-+                                },
-+                                mac: mac.substring(2)
-+                            }
-+                        };
-+                
-+                        // If we have a mnemonic, encrypt it into the JSON wallet
-+                        if (entropy) {
-+                            const mnemonicIv = randomBytes(16);
-+                            const mnemonicCounter = new aes.Counter(mnemonicIv);
-+                            const mnemonicAesCtr = new aes.ModeOfOperation.ctr(mnemonicKey, mnemonicCounter);
-+                            const mnemonicCiphertext = arrayify(mnemonicAesCtr.encrypt(entropy));
-+                            const now = new Date();
-+                            const timestamp = (now.getUTCFullYear() + "-" +
-+                                            zpad(now.getUTCMonth() + 1, 2) + "-" +
-+                                            zpad(now.getUTCDate(), 2) + "T" +
-+                                            zpad(now.getUTCHours(), 2) + "-" +
-+                                            zpad(now.getUTCMinutes(), 2) + "-" +
-+                                            zpad(now.getUTCSeconds(), 2) + ".0Z"
-+                                            );
-+                            data["x-ethers"] = {
-+                                client: client,
-+                                gethFilename: ("UTC--" + timestamp + "--" + data.address),
-+                                mnemonicCounter: hexlify(mnemonicIv).substring(2),
-+                                mnemonicCiphertext: hexlify(mnemonicCiphertext).substring(2),
-+                                path: path,
-+                                locale: locale,
-+                                version: "0.1"
-+                            };
-+                        }
-+                
-+                        resolve(JSON.stringify(data));
-+                    })
-+                    .catch(err=>{
-+                        reject(err);
-+                    });
-+
-+                })
-+                .catch(err=>{
-+                    reject(err);
-+                })
-                 
+     
 -    let entropy: Uint8Array = null
 -    let path: string = null;
 -    let locale: string = null;
@@ -612,7 +449,7 @@ index 41ea298..4fce06f 100644
 -        path = srcMnemonic.path || defaultPath;
 -        locale = srcMnemonic.locale || "en";
 -    }
-                 
+-
 -    let client = options.client;
 -    if (!client) { client = "ethers.js"; }
 -
@@ -676,7 +513,7 @@ index 41ea298..4fce06f 100644
 -            address: account.address.substring(2).toLowerCase(),
 -            id: uuidV4(uuidRandom),
 -            version: 3,
--            Crypto: {
+-            crypto: {
 -                cipher: "aes-128-ctr",
 -                cipherparams: {
 -                    iv: hexlify(iv).substring(2),
@@ -691,6 +528,151 @@ index 41ea298..4fce06f 100644
 -                    r: r
 -                },
 -                mac: mac.substring(2)
++            // Check the mnemonic (if any) matches the private key
++            if (hasMnemonic(account)) {
++                const mnemonic = account.mnemonic;
++                HDNode.fromMnemonic(mnemonic.phrase, null, mnemonic.locale)
++                .then(hdnode=>{
++                    const node = hdnode.derivePath(mnemonic.path || defaultPath);
++
++                    if (node.privateKey != account.privateKey) {
++                        throw new Error("mnemonic mismatch");
++                    }
++                    // The options are optional, so adjust the call as needed
++                    if (typeof(options) === "function" && !progressCallback) {
++                        progressCallback = options;
++                        options = {};
++                    }
++                    if (!options) { options = {}; }
++
++                    const privateKey: Uint8Array = arrayify(account.privateKey);
++                    const passwordBytes = getPassword(password);
++
++                    let entropy: Uint8Array = null
++                    let path: string = null;
++                    let locale: string = null;
++                    if (hasMnemonic(account)) {
++                        const srcMnemonic = account.mnemonic;
++                        entropy = arrayify(mnemonicToEntropy(srcMnemonic.phrase, srcMnemonic.locale || "en"));
++                        path = srcMnemonic.path || defaultPath;
++                        locale = srcMnemonic.locale || "en";
++                    }
++
++                    let client = options.client;
++                    if (!client) { client = "ethers.js"; }
++
++                    // Check/generate the salt
++                    let salt: Uint8Array = null;
++                    if (options.salt) {
++                        salt = arrayify(options.salt);
++                    } else {
++                        salt = randomBytes(32);;
++                    }
++
++                    // Override initialization vector
++                    let iv: Uint8Array = null;
++                    if (options.iv) {
++                        iv = arrayify(options.iv);
++                        if (iv.length !== 16) { throw new Error("invalid iv"); }
++                    } else {
++                    iv = randomBytes(16);
++                    }
++
++                    // Override the uuid
++                    let uuidRandom: Uint8Array = null;
++                    if (options.uuid) {
++                        uuidRandom = arrayify(options.uuid);
++                        if (uuidRandom.length !== 16) { throw new Error("invalid uuid"); }
++                    } else {
++                        uuidRandom = randomBytes(16);
++                    }
++
++                    // Override the scrypt password-based key derivation function parameters
++                    let N = (1 << 17), r = 8, p = 1;
++                    if (options.scrypt) {
++                        if (options.scrypt.N) { N = options.scrypt.N; }
++                        if (options.scrypt.r) { r = options.scrypt.r; }
++                        if (options.scrypt.p) { p = options.scrypt.p; }
++                    }
++
++                    // We take 64 bytes:
++                    //   - 32 bytes   As normal for the Web3 secret storage (derivedKey, macPrefix)
++                    //   - 32 bytes   AES key to encrypt mnemonic with (required here to be Ethers Wallet)
++                    scrypt.scrypt(passwordBytes, salt, N, r, p, 64, progressCallback).then((key) => {
++                        key = arrayify(key);
++
++                        // This will be used to encrypt the wallet (as per Web3 secret storage)
++                        const derivedKey = key.slice(0, 16);
++                        const macPrefix = key.slice(16, 32);
++
++                        // This will be used to encrypt the mnemonic phrase (if any)
++                        const mnemonicKey = key.slice(32, 64);
++
++                        // Encrypt the private key
++                        const counter = new aes.Counter(iv);
++                        const aesCtr = new aes.ModeOfOperation.ctr(derivedKey, counter);
++                        const ciphertext = arrayify(aesCtr.encrypt(privateKey));
++
++                        // Compute the message authentication code, used to check the password
++                        const mac = keccak256(concat([macPrefix, ciphertext]))
++
++                        // See: https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
++                        const data: { [key: string]: any } = {
++                            address: account.address.substring(2).toLowerCase(),
++                            id: uuidV4(uuidRandom),
++                            version: 3,
++                            crypto: {
++                                cipher: "aes-128-ctr",
++                                cipherparams: {
++                                    iv: hexlify(iv).substring(2),
++                                },
++                                ciphertext: hexlify(ciphertext).substring(2),
++                                kdf: "scrypt",
++                                kdfparams: {
++                                    salt: hexlify(salt).substring(2),
++                                    n: N,
++                                    dklen: 32,
++                                    p: p,
++                                    r: r
++                                },
++                                mac: mac.substring(2)
++                            }
++                        };
++
++                        // If we have a mnemonic, encrypt it into the JSON wallet
++                        if (entropy) {
++                            const mnemonicIv = randomBytes(16);
++                            const mnemonicCounter = new aes.Counter(mnemonicIv);
++                            const mnemonicAesCtr = new aes.ModeOfOperation.ctr(mnemonicKey, mnemonicCounter);
++                            const mnemonicCiphertext = arrayify(mnemonicAesCtr.encrypt(entropy));
++                            const now = new Date();
++                            const timestamp = (now.getUTCFullYear() + "-" +
++                                            zpad(now.getUTCMonth() + 1, 2) + "-" +
++                                            zpad(now.getUTCDate(), 2) + "T" +
++                                            zpad(now.getUTCHours(), 2) + "-" +
++                                            zpad(now.getUTCMinutes(), 2) + "-" +
++                                            zpad(now.getUTCSeconds(), 2) + ".0Z"
++                                            );
++                            data["x-ethers"] = {
++                                client: client,
++                                gethFilename: ("UTC--" + timestamp + "--" + data.address),
++                                mnemonicCounter: hexlify(mnemonicIv).substring(2),
++                                mnemonicCiphertext: hexlify(mnemonicCiphertext).substring(2),
++                                path: path,
++                                locale: locale,
++                                version: "0.1"
++                            };
++                        }
++
++                        resolve(JSON.stringify(data));
++                    })
++                    .catch(err=>{
++                        reject(err);
++                    });
++                })
++                .catch(err=>{
++                    reject(err);
++                });
              }
 -        };
 -
@@ -717,13 +699,11 @@ index 41ea298..4fce06f 100644
 -                locale: locale,
 -                version: "0.1"
 -            };
-+    
-+        } catch (e) {
-+            reject(e);
-         }
+-        }
      
 -        return JSON.stringify(data);
--    });
-+    })
-+    
++        } catch (e) {
++            return reject(e);
++        }
+     });
  }
