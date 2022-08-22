@@ -1,7 +1,9 @@
 import "react-native-get-random-values";
 import "@ethersproject/shims";
 import { BigNumber, BigNumberish, ethers } from "ethers";
-import { IContractABI, ITransaction, IWallet } from "./interface"
+import { IContractABI, IWallet } from "./interface"
+
+export type INetwork = string | ethers.utils.ConnectionInfo;
 
 /**
  *
@@ -93,73 +95,73 @@ export declare function importMnemonic(mnemonic: string, password: string, path?
  */
 export declare function importKeystore(keystore: string, password: string, needPrivateKey?: boolean, needPublicKey?: boolean): Promise<Omit<IWallet, 'mnemonic' | 'shuffleMnemonic'>>;
 
-export declare function getBalance(network: string, address: string, network_detail?: {
+export declare function getBalance(network: INetwork, address: string, network_detail?: {
+  name: string;
+  chainId: number;
+  ensAddress: string;
+}): Promise<BigNumberish>;
+
+export declare function getContractBalance(network: INetwork, contractAddress: string, contractAbi: IContractABI, address: string, network_detail?: {
+  name: string;
+  chainId: number;
+  ensAddress: string;
+}): Promise<BigNumberish>;
+
+export declare function getContractNfts(network: INetwork, contractAddress: string, contractAbi: IContractABI, address: string, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
 }): any;
 
-export declare function getContractBalance(network: string, contractAddress: string, contractAbi: IContractABI, address: string, network_detail?: {
+export declare function getGasPrice(network: INetwork, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
 }): Promise<BigNumberish>;
 
-export declare function getContractNfts(network: string, contractAddress: string, contractAbi: IContractABI, address: string, network_detail?: {
-  name: string;
-  chainId: number;
-  ensAddress: string;
-}): any;
-
-export declare function getGasPrice(network: string, network_detail?: {
+export declare function getGasLimit(network: INetwork, fromaddress: string, toaddress: string, amount: string, data: any, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
 }): Promise<BigNumberish>;
 
-export declare function getGasLimit(network: string, fromaddress: string, toaddress: string, amount: string, data: any, network_detail?: {
-  name: string;
-  chainId: number;
-  ensAddress: string;
-}): Promise<BigNumberish>;
-
-export declare function getNonce(network: string, address: string, network_detail?: {
+export declare function getNonce(network: INetwork, address: string, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
 }, blockTag?: string): Promise<number>;
 
-export declare function waitForTransaction(network: string, transactionHash: any, network_detail?: {
+export declare function waitForTransaction(network: INetwork, transactionHash: string, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
-}): Promise<ITransaction>;
+}): Promise<ethers.providers.TransactionReceipt>;
 
-export declare function sendTransaction(network: string, signedTransaction: any, network_detail?: {
+export declare function sendTransaction(network: INetwork, signedTransaction: string, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
-}): any;
+}): Promise<ethers.providers.TransactionResponse>;
 
-export declare function signTransaction(keystore: string, password: string, nonce: any, gasLimit: any, gasPrice: any, toaddress: string, chainId: any, amount: string, data: any): any;
+export declare function signTransaction(keystore: string, password: string, nonce: any, gasLimit: any, gasPrice: any, toaddress: string, chainId: any, amount: string, data: any): Promise<string>;
 
-export declare function signMessage(keystore: string, password: string, message: any): any;
+export declare function signMessage(keystore: string, password: string, message: any): Promise<string>;
 
-export declare function signTypedData(keystore: string, password: string, domain: any, types: any, value: any): any;
+export declare function signTypedData(keystore: string, password: string, domain: any, types: any, value: any): Promise<string>;
 
-export declare function getContractGasLimit(network: string, contractAddress: string, contractAbi: IContractABI, keystore: string, password: string, toaddress: string, amount: string, decims: any, network_detail?: {
+export declare function getContractGasLimit(network: INetwork, contractAddress: string, contractAbi: IContractABI, keystore: string, password: string, toaddress: string, amount: string, decims: any, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
-}): any;
+}): Promise<BigNumberish>;
 
-export declare function waitForContractTransaction(tx: any): any;
+export declare function waitForContractTransaction(tx: ethers.providers.TransactionResponse): Promise<ethers.providers.TransactionReceipt>;
 
-export declare function contractTransaction(network: string, contractAddress: string, contractAbi: IContractABI, keystore: string, password: string, nonce: any, gasLimit: any, gasPrice: any, toaddress: string, amount: string, decims: any, network_detail?: {
+export declare function contractTransaction(network: INetwork, contractAddress: string, contractAbi: IContractABI, keystore: string, password: string, nonce: any, gasLimit: any, gasPrice: any, toaddress: string, amount: string, decims: any, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
-}): any;
+}): ethers.providers.TransactionResponse;
 
 /**
  *
@@ -171,7 +173,7 @@ export declare function contractTransaction(network: string, contractAddress: st
  * @param {{name:'', chainId:'',ensAddress:''}|ethers.providers.Networkish} [network_detail={name:'', chainId:'',ensAddress:''}]
  * @return
  */
-export declare function getContract(network: string, contractAddress: string, contractAbi: IContractABI, network_detail?: {
+export declare function getContract(network: INetwork, contractAddress: string, contractAbi: IContractABI, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
@@ -189,7 +191,7 @@ export declare function getContract(network: string, contractAddress: string, co
  * @param {{name:'', chainId:'',ensAddress:''}|ethers.providers.Networkish} [network_detail={name:'', chainId:'',ensAddress:''}]
  * @return {Promise<ethers.Contract>}
  */
-export declare function getSignerContract(network: string, contractAddress: string, contractAbi: IContractABI, keystore: string, password: string, network_detail?: {
+export declare function getSignerContract(network: INetwork, contractAddress: string, contractAbi: IContractABI, keystore: string, password: string, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
@@ -214,7 +216,7 @@ export declare function getSignerContractWithWalletProvider(contractAddress: str
  * @param {{name:'', chainId:'',ensAddress:''}|ethers.providers.Networkish} [network_detail={name:'', chainId:'',ensAddress:''}]
  * @return {Promise<ethers.Wallet>}
  */
-export declare function getWalletSigner(network: string, keystore: string, password: string, network_detail?: {
+export declare function getWalletSigner(network: INetwork, keystore: string, password: string, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
@@ -228,7 +230,7 @@ export declare function getWalletSigner(network: string, keystore: string, passw
  * @param {{name:'', chainId:'',ensAddress:''}|ethers.providers.Networkish} [network_detail={name:'', chainId:'',ensAddress:''}]
  * @return {ethers.providers.Provider|undefined}
  */
-export declare function getProvider(network: string, network_detail?: {
+export declare function getProvider(network: INetwork, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;
@@ -241,7 +243,7 @@ export declare function getProvider(network: string, network_detail?: {
  * @param {[]} origin
  * @return {[]}
  */
-export declare function shuffleArray(origin: any): any[];
+export declare function shuffleArray(origin: any[]): any[];
 
 export declare function bigNumberFormatUnits(value: any, decims?: number): string;
 

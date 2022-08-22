@@ -33,27 +33,3 @@ export interface IWallet {
 }
 
 export type IContractABI = string | ReadonlyArray<Fragment | JsonFragment | string>
-
-export interface ITransaction {
-  blockHash: string;
-  blockNumber: number;
-  byzantium: boolean;
-  confirmations: number;
-  contractAddress?: any;
-  cumulativeGasUsed: {
-    hex: string;
-    type: string;
-  };
-  from: string;
-  gasUsed: {
-    hex: string;
-    type: string;
-  };
-  logs: any[];
-  logsBloom: string;
-  status: number;
-  to: string;
-  transactionHash: string;
-  transactionIndex: number;
-  type: number;
-}
