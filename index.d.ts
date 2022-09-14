@@ -10,23 +10,26 @@ export type INetwork = string | ethers.utils.ConnectionInfo;
  *
  * @export
  * @param {string} password
- * @param {string} [path="m/44'/60'/0'/0/0"]
- * @param {number} [seedByte=16]
+ * @param {string} [path="m/44'/60'/0'/0/0"] "m/44'/60'/0'/0/0"
+ * @param {number} [seedByte=16] 16=12words 20=15words 24=18words 28=21words 32=24words
  * @param {boolean} [needPrivateKey=false]
  * @param {boolean} [needPublicKey=false]
- * @return {Promise<{mnemonic:[],keystore:{},shuffleMnemonic:[],publicKey:'',privateKey:''}>}
+ * @param {boolean} [needKeystore=true]
+ * @param {string} [mnemonicPassword='']
+ * @return {Promise<{address:'',mnemonic:[],keystore:{},shuffleMnemonic:[],publicKey:'',privateKey:''}>}
  */
-export declare function createWallet(password: string, path?: string, seedByte?: number, needPrivateKey?: boolean, needPublicKey?: boolean): Promise<IWallet>;
+export declare function createWallet(password: string, path?: string, seedByte?: number, needPrivateKey?: boolean, needPublicKey?: boolean, needKeystore?: boolean, mnemonicPassword? :string): Promise<IWallet>;
 
 /**
  *
  *
  * @export
  * @param {string} mnemonic
- * @param {string} path
+ * @param {string} [path="m/44'/60'/0'/0/0"] "m/44'/60'/0'/0/0"
+ * @param {string} [password='']
  * @return {Promise<string>}
  */
-export declare function exportPrivateKeyFromMnemonic(mnemonic: string, path: string): Promise<string>;
+export declare function exportPrivateKeyFromMnemonic(mnemonic: string, path?: string, password?: string): Promise<string>;
 
 /**
  *
@@ -44,9 +47,21 @@ export declare function exportPrivateKeyFromKeystore(keystore: string, password:
  * @export
  * @param {string} keystore
  * @param {string} password
- * @return {Promise<string>}
+ * @return {Promise<{mnemonic:[],shuffleMnemonic:[]}>}
  */
-export declare function exportMnemonicFromKeystore(keystore: string, password: string): Promise<string>;
+export declare function exportMnemonicFromKeystore(keystore: string, password: string): Promise<Omit<IWallet, 'address' | 'keystore' | 'publicKey' | 'privateKey'>>;
+
+/**
+ *
+ *
+ * @export
+ * @param {string} mnemonic
+ * @param {string} path
+ * @param {string} address
+ * @param {string} password
+ * @return {Promise<{mnemonic:[],shuffleMnemonic:[]}>} 
+ */
+ export declare function exportMnemonic(mnemonic: string, address: string, path?: string, password?: string): Promise<Omit<IWallet, 'address' | 'keystore' | 'publicKey' | 'privateKey'>>;
 
 /**
  *
@@ -62,11 +77,24 @@ export declare function exportKeystore(keystore: string, password: string): Prom
  *
  *
  * @export
+ * @param {string} mnemonic
+ * @param {string} [path="m/44'/60'/0'/0/0"] "m/44'/60'/0'/0/0" 
+ * @param {string} [address='']
+ * @param {string} password
+ * @param {string} [mnemonicPassword='']
+ * @return {Promise<string>} 
+ */
+ export declare function exportKeystoreFromMnemonic(password: string, mnemonic: string, address?: string, path?: string, mnemonicPassword?: string): Promise<string>;
+
+ /**
+ *
+ *
+ * @export
  * @param {string} privateKey
  * @param {string} password
  * @param {boolean} [needPrivateKey=false]
  * @param {boolean} [needPublicKey=false]
- * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>}
+ * @return {Promise<{address:'',keystore:{},publicKey:'',privateKey:''}>}
  */
 export declare function importPrivateKey(privateKey: string, password: string, needPrivateKey?: boolean, needPublicKey?: boolean): Promise<Omit<IWallet, 'mnemonic' | 'shuffleMnemonic'>>;
 
@@ -79,9 +107,11 @@ export declare function importPrivateKey(privateKey: string, password: string, n
  * @param {string} [path="m/44'/60'/0'/0/0"]
  * @param {boolean} [needPrivateKey=false]
  * @param {boolean} [needPublicKey=false]
- * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>}
+ * @param {boolean} [needKeystore=true]
+ * @param {string} [mnemonicPassword='']
+ * @return {Promise<{address:'',keystore:{},publicKey:'',privateKey:'',mnemonic:[],shuffleMnemonic[]}>} 
  */
-export declare function importMnemonic(mnemonic: string, password: string, path?: string, needPrivateKey?: boolean, needPublicKey?: boolean): Promise<Omit<IWallet, 'mnemonic' | 'shuffleMnemonic'>>;
+export declare function importMnemonic(mnemonic: string, password: string, path?: string, needPrivateKey?: boolean, needPublicKey?: boolean, needKeystore?: boolean, mnemonicPassword?: string): Promise<IWallet>;
 
 /**
  *
@@ -91,9 +121,9 @@ export declare function importMnemonic(mnemonic: string, password: string, path?
  * @param {string} password
  * @param {boolean} [needPrivateKey=false]
  * @param {boolean} [needPublicKey=false]
- * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>}
+ * @return {Promise<{address:'',keystore:{},publicKey:'',privateKey:''}>}
  */
-export declare function importKeystore(keystore: string, password: string, needPrivateKey?: boolean, needPublicKey?: boolean): Promise<Omit<IWallet, 'mnemonic' | 'shuffleMnemonic'>>;
+export declare function importKeystore(keystore: string, password: string, needPrivateKey?: boolean, needPublicKey?: boolean): Promise<IWallet>;
 
 export declare function getBalance(network: INetwork, address: string, network_detail?: {
   name: string;
@@ -217,6 +247,40 @@ export declare function getSignerContractWithWalletProvider(contractAddress: str
  * @return {Promise<ethers.Wallet>}
  */
 export declare function getWalletSigner(network: INetwork, keystore: string, password: string, network_detail?: {
+  name: string;
+  chainId: number;
+  ensAddress: string;
+}): Promise<ethers.Wallet>;
+
+/**
+ *
+ *
+ * @export
+ * @param {string|ethers.utils.ConnectionInfo} network
+ * @param {string} mnemonic
+ * @param {string} [path="m/44'/60'/0'/0/0"] "m/44'/60'/0'/0/0"
+ * @param {string} [address='']
+ * @param {string} [password='']
+ * @param {{name:'', chainId:'',ensAddress:''}|ethers.providers.Networkish} [network_detail={name:'', chainId:'',ensAddress:''}]
+ * @return {Promise<ethers.Wallet>} 
+ */
+ export function getWalletSignerWithMnemonic(network: INetwork, mnemonic: string, address?: string, path?: string, password?: string, network_detail?: {
+  name: string;
+  chainId: number;
+  ensAddress: string;
+}): Promise<ethers.Wallet>;
+
+/**
+ *
+ *
+ * @export
+ * @param {string|ethers.utils.ConnectionInfo} network
+ * @param {string} privateKey
+ * @param {string} address
+ * @param {{name:'', chainId:'',ensAddress:''}|ethers.providers.Networkish} [network_detail={name:'', chainId:'',ensAddress:''}]
+ * @return {Promise<ethers.Wallet>} 
+ */
+ export function getWalletSignerWithPrivateKey(network: INetwork, privateKey: string, address?: string, network_detail?: {
   name: string;
   chainId: number;
   ensAddress: string;

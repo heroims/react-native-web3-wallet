@@ -16,51 +16,50 @@ import { BigNumber, ethers } from "ethers";
  * @param {number} [seedByte=16]
  * @param {boolean} [needPrivateKey=false]
  * @param {boolean} [needPublicKey=false]
- * @return {Promise<{mnemonic:[],keystore:{},shuffleMnemonic:[],publicKey:'',privateKey:''}>} 
+ * @param {boolean} [needKeystore=true]
+ * @param {string} [mnemonicPassword='']
+ * @return {Promise<{address:'',mnemonic:[],keystore:{},shuffleMnemonic:[],publicKey:'',privateKey:''}>} 
  */
-export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16, needPrivateKey = false, needPublicKey = false){
+export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16, needPrivateKey = false, needPublicKey = false, needKeystore = true, mnemonicPassword = ''){
     return new Promise((fulfill, reject)=>{
         try {
-            console.log('create begin');
-
-            var start = performance.now();
             //16-12words 20-15words 24-18words 28-21words 32-24words
             let privateSeed = ethers.utils.randomBytes(seedByte);
             //2048 words
             let mnemonic = ethers.utils.entropyToMnemonic(privateSeed);
-    
-            var end = performance.now();
-            console.log('mnemonic done', `${end - start}ms\n`);
-        
-            let wallet = ethers.Wallet.fromMnemonic(mnemonic, path);
-        
-            end = performance.now();
-            console.log('wallet init', `${end - start}ms\n`);
             
+            let node = ethers.utils.HDNode.fromMnemonic(mnemonic, mnemonicPassword);
+            let hdnode = node.derivePath(path);
             let mnemonicArr = mnemonic.split(' ');
             let shuffleMnemonicArr = shuffleArray(mnemonicArr);
+            let response = {
+                mnemonic : mnemonicArr, 
+                shuffleMnemonic : shuffleMnemonicArr,
+                address : hdnode.address,
+            };
+            if(needPublicKey){
+                response.publicKey=hdnode.publicKey;
+            }
+            if(needPrivateKey){
+                response.privateKey=hdnode.privateKey;
+            }
 
-            wallet.encrypt(password).then(res=>{
-                end = performance.now();
-                let jsonObj = JSON.parse(res);
+            if(needKeystore){
+                let wallet = new ethers.Wallet(mnemonicPassword ? hdnode.privateKey : hdnode)
+                wallet.encrypt(password).then(res=>{
+                    let jsonObj = JSON.parse(res);
+                        
+                    response.keystore = jsonObj;
                 
-                let response = {
-                    mnemonic : mnemonicArr, 
-                    keystore : jsonObj,
-                    shuffleMnemonic : shuffleMnemonicArr,
-                };
-                if(needPublicKey){
-                    response.publicKey=wallet.publicKey;
-                }
-                if(needPrivateKey){
-                    response.privateKey=wallet.privateKey;
-                }
-
-                fulfill(response)
-            })
-            .catch(err=>{
-                reject(err);
-            }); 
+                    fulfill(response)
+                })
+                .catch(err=>{
+                    reject(err);
+                });
+            }
+            else{
+                fulfill(response) 
+            } 
         } catch (error) {
             reject(error);
         }
@@ -72,14 +71,17 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
  *
  * @export
  * @param {string} mnemonic
- * @param {string} path
+ * @param {string} [path="m/44'/60'/0'/0/0"] "m/44'/60'/0'/0/0"
+ * @param {string} [password='']
  * @return {Promise<string>} 
  */
-export function exportPrivateKeyFromMnemonic(mnemonic, path){
+export function exportPrivateKeyFromMnemonic(mnemonic, path = "m/44'/60'/0'/0/0", password = ''){
     return new Promise((fulfill, reject)=>{
         try {
-            let wallet = ethers.Wallet.fromMnemonic(mnemonic, path)
-            fulfill(wallet.privateKey);
+            password = password ? password : '';
+            let node = ethers.utils.HDNode.fromMnemonic(mnemonic, password);
+            let hdnode = node.derivePath(path);
+            fulfill(hdnode.privateKey);
         } catch (error) {
             reject(error);
         }
@@ -111,7 +113,7 @@ export function exportPrivateKeyFromKeystore(keystore, password){
  * @export
  * @param {string} keystore
  * @param {string} password
- * @return {Promise<string>} 
+ * @return {Promise<{mnemonic:[],shuffleMnemonic:[]}>} 
  */
 export function exportMnemonicFromKeystore(keystore, password){
     return new Promise((fulfill, reject)=>{
@@ -126,6 +128,42 @@ export function exportMnemonicFromKeystore(keystore, password){
         .catch(err=>{
             reject(err);
         });
+    });
+}
+
+/**
+ *
+ *
+ * @export
+ * @param {string} mnemonic
+ * @param {string} [path="m/44'/60'/0'/0/0"] "m/44'/60'/0'/0/0"
+ * @param {string} address
+ * @param {string} password
+ * @return {Promise<{mnemonic:[],shuffleMnemonic:[]}>} 
+ */
+export function exportMnemonic(mnemonic, address, path = "m/44'/60'/0'/0/0", password = ''){
+    return new Promise((fulfill, reject)=>{
+        password = password ? password : '';
+        let node = ethers.utils.HDNode.fromMnemonic(mnemonic, password);
+        let hdnode = node.derivePath(path);
+        let passwordError = false;
+        if(address){
+            if(address.toLowerCase() !== hdnode.address.toLowerCase()){
+                passwordError = true;
+            }
+        }
+        
+        if(!passwordError){
+            let mnemonicArr = res.mnemonic.phrase.split(' ');
+            let shuffleMnemonicArr = shuffleArray(mnemonicArr);
+            fulfill({
+                mnemonic : mnemonicArr, 
+                shuffleMnemonic : shuffleMnemonicArr,     
+            });
+        }
+        else{
+            reject('password is wrong');
+        }
     });
 }
 
@@ -152,11 +190,42 @@ export function exportKeystore(keystore, password){
  *
  *
  * @export
+ * @param {string} mnemonic
+ * @param {string} path
+ * @param {string} address
+ * @param {string} password
+ * @param {string} [mnemonicPassword='']
+ * @return {Promise<string>} 
+ */
+export function exportKeystoreFromMnemonic(password, mnemonic, address, path = "m/44'/60'/0'/0/0", mnemonicPassword = ''){
+    return new Promise((fulfill, reject)=>{
+        mnemonicPassword = mnemonicPassword ? mnemonicPassword : '';
+        let node = ethers.utils.HDNode.fromMnemonic(mnemonic, mnemonicPassword);
+        let hdnode = node.derivePath(path);
+        if(address.toLowerCase() === hdnode.address.toLowerCase()){
+            let wallet = new ethers.Wallet(password ? hdnode.privateKey : hdnode)
+            wallet.encrypt(password).then(res=>{
+                fulfill(res);
+            })
+            .catch(err=>{
+                reject(err);
+            });
+        }
+        else{
+            reject('password is wrong');
+        }
+    });
+}
+
+/**
+ *
+ *
+ * @export
  * @param {string} privateKey
  * @param {string} password
  * @param {boolean} [needPrivateKey=false]
  * @param {boolean} [needPublicKey=false]
- * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>} 
+ * @return {Promise<{address:'',keystore:{},publicKey:'',privateKey:''}>} 
  */
 export function importPrivateKey(privateKey, password, needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
@@ -172,6 +241,7 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
 
                 let response = {
                     keystore : jsonObj,
+                    address : wallet.address,
                 };
                 if(needPublicKey){
                     response.publicKey=res.publicKey;
@@ -200,29 +270,46 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
  * @param {string} [path="m/44'/60'/0'/0/0"]
  * @param {boolean} [needPrivateKey=false]
  * @param {boolean} [needPublicKey=false]
- * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>} 
+ * @param {boolean} [needKeystore=true]
+ * @param {string} [mnemonicPassword='']
+ * @return {Promise<{address:'',keystore:{},publicKey:'',privateKey:'',mnemonic:[],shuffleMnemonic[]}>} 
  */
-export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", needPrivateKey = false, needPublicKey = false){
+export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", needPrivateKey = false, needPublicKey = false, needKeystore = true, mnemonicPassword = ''){
     return new Promise((fulfill, reject)=>{
         try {
-            let wallet = ethers.Wallet.fromMnemonic(mnemonic, path);
-            wallet.encrypt(password).then(res=>{
-                let jsonObj = JSON.parse(res);
+            mnemonicPassword = mnemonicPassword ? mnemonicPassword : '';
+            let node = ethers.utils.HDNode.fromMnemonic(mnemonic, mnemonicPassword);
+            let hdnode = node.derivePath(path);
+            let mnemonicArr = mnemonic.split(' ');
+            let shuffleMnemonicArr = shuffleArray(mnemonicArr);
+            let response = {
+                mnemonic : mnemonicArr, 
+                shuffleMnemonic : shuffleMnemonicArr,
+                address : hdnode.address,
+            };
 
-                let response = {
-                    keystore : jsonObj,
-                };
-                if(needPublicKey){
-                    response.publicKey=res.publicKey;
-                }
-                if(needPrivateKey){
-                    response.privateKey=res.privateKey;
-                }
+            if(needPublicKey){
+                response.publicKey=hdnode.publicKey;
+            }
+            if(needPrivateKey){
+                response.privateKey=hdnode.privateKey;
+            }
+
+            let wallet = new ethers.Wallet(mnemonicPassword ? hdnode.privateKey : hdnode)
+            if(needKeystore){
+                wallet.encrypt(password).then(res=>{
+                    let jsonObj = JSON.parse(res);
+    
+                    response.keystore = jsonObj;
+                    fulfill(response);
+                })
+                .catch(err=>{
+                    reject(err);
+                });
+            }
+            else{
                 fulfill(response);
-            })
-            .catch(err=>{
-                reject(err);importMnemonic()
-            });
+            }
         } catch (error) {
             reject(error);
         }
@@ -237,13 +324,14 @@ export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", ne
  * @param {string} password
  * @param {boolean} [needPrivateKey=false]
  * @param {boolean} [needPublicKey=false]
- * @return {Promise<{keystore:{},publicKey:'',privateKey:''}>} 
+ * @return {Promise<{address:'',keystore:{},publicKey:'',privateKey:''}>} 
  */
 export function importKeystore(keystore, password, needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
         ethers.Wallet.fromEncryptedJson(keystore,password)
         .then(res=>{
             let response = {
+                address : res.address,
                 keystore : keystore,
             };
             if(needPublicKey){
@@ -822,6 +910,106 @@ export function getWalletSigner(network, keystore, password, network_detail = {n
             .catch(err=>{
                 reject(err);
             });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+/**
+ *
+ *
+ * @export
+ * @param {string|ethers.utils.ConnectionInfo} network
+ * @param {string} mnemonic
+ * @param {string} path
+ * @param {string} address
+ * @param {string} password
+ * @param {{name:'', chainId:'',ensAddress:''}|ethers.providers.Networkish} [network_detail={name:'', chainId:'',ensAddress:''}]
+ * @return {Promise<ethers.Wallet>} 
+ */
+export function getWalletSignerWithMnemonic(network, mnemonic, address = '', path = "m/44'/60'/0'/0/0", password = '', network_detail = {name:'', chainId:'',ensAddress:''}){
+    return new Promise((fulfill, reject)=>{
+        try {    
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                    provider = new ethers.providers.JsonRpcProvider(network);
+                }
+                else{
+                    provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+                }
+            }
+            password = password ? password : '';
+            let node = ethers.utils.HDNode.fromMnemonic(mnemonic, password)
+            let hdnode = node.derivePath(path);
+
+            let passwordError = false;
+            if(address){
+                if(address.toLowerCase() !== hdnode.address.toLowerCase()){
+                    passwordError = true;
+                }
+            }
+
+            if(!passwordError){
+                let wallet = new ethers.Wallet(password ? hdnode.privateKey : hdnode);
+
+                let walletWithSigner = wallet.connect(provider);
+                fulfill(walletWithSigner);
+            }
+            else{
+                reject('password is wrong');
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+/**
+ *
+ *
+ * @export
+ * @param {string|ethers.utils.ConnectionInfo} network
+ * @param {string} privateKey
+ * @param {string} address
+ * @param {{name:'', chainId:'',ensAddress:''}|ethers.providers.Networkish} [network_detail={name:'', chainId:'',ensAddress:''}]
+ * @return {Promise<ethers.Wallet>} 
+ */
+export function getWalletSignerWithPrivateKey(network, privateKey, address = '', network_detail = {name:'', chainId:'',ensAddress:''}){
+    return new Promise((fulfill, reject)=>{
+        try {    
+            let provider;
+            if(network==='' || network===undefined){
+                provider = new ethers.providers.getDefaultProvider();
+            }
+            else{
+                if(JSON.stringify(network_detail)===JSON.stringify({name:'', chainId:'',ensAddress:''})){
+                    provider = new ethers.providers.JsonRpcProvider(network);
+                }
+                else{
+                    provider = new ethers.providers.JsonRpcProvider(network, network_detail);
+                }
+            }
+            let wallet = new ethers.Wallet(privateKey);
+            let passwordError = false;
+            if(address){
+                if(address.toLowerCase() !== wallet.address.toLowerCase()){
+                    passwordError = true;
+                }
+            }
+
+            if(!passwordError){
+
+                let walletWithSigner = wallet.connect(provider);
+                fulfill(walletWithSigner);
+            }
+            else{
+                reject('password is wrong');
+            }
         } catch (error) {
             reject(error);
         }

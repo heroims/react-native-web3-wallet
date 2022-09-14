@@ -25,8 +25,9 @@ export interface IKeystore {
 }
 
 export interface IWallet {
+  address?: string
   mnemonic: string[]
-  keystore: IKeystore
+  keystore?: IKeystore
   shuffleMnemonic: string[]
   publicKey?: string
   privateKey?: string
