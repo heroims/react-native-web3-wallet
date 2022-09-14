@@ -28,6 +28,7 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
             //2048 words
             let mnemonic = ethers.utils.entropyToMnemonic(privateSeed);
             
+            mnemonicPassword = mnemonicPassword ? mnemonicPassword : '';
             let node = ethers.utils.HDNode.fromMnemonic(mnemonic, mnemonicPassword);
             let hdnode = node.derivePath(path);
             let mnemonicArr = mnemonic.split(' ');
