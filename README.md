@@ -4,7 +4,7 @@ Web3 Wallet in React Native (use ethers.js)
 
 This is a safe web3 wallet tools, to help with develop wallet applications quickly. 
 
-This wallet module does not expose the private key, and only advocates storing the keystore locally, and does not activate the wallet except for write operations. 
+This wallet module does not expose the private key, and only advocates storing the keystore or the mnemonic with the password authentication locally, and does not activate the wallet except for write operations. 
 
 ## Installation
 
@@ -34,9 +34,12 @@ import {
   exportKeystore,
   exportMnemonicFromKeystore,
   exportPrivateKeyFromKeystore,
+  exportMnemonic,
+  exportKeystoreFromMnemonic,
   exportPrivateKeyFromMnemonic,
-  bigNumberFormatUnits,
-  bigNumberParseUnits,
+  importKeystore,
+  importMnemonic,
+  importPrivateKey,
   getBalance,
   getContractBalance,
   getContractGasLimit,
@@ -44,9 +47,6 @@ import {
   getGasLimit,
   getGasPrice,
   getNonce,
-  importKeystore,
-  importMnemonic,
-  importPrivateKey,
   sendTransaction,
   signTransaction,
   signMessage,
@@ -55,6 +55,12 @@ import {
   waitForTransaction,
   getContract,
   getSignerContract,
+  getWalletSigner,
+  getWalletSignerWithMnemonic,
+  getWalletSignerWithPrivateKey,
+  getSignerContractWithWalletProvider,
+  bigNumberFormatUnits,
+  bigNumberParseUnits,
 } from 'react-native-web3-wallet';
 ```
 
@@ -95,6 +101,14 @@ exportKeystore(JSON.stringify(keystore), 'password')
   .catch(err => {
     console.log(err);
   });
+
+exportKeystoreFromMnemonic('password','mnemonic string','address',"m/44'/60'/0'/0/0",'mnemonicPassword')
+  .then(res => {
+    console.log(res);
+  })
+  .catch(err => {
+    console.log(err);
+  });
 ```
 Print Keystore json object
 #### Export privateKey
@@ -122,6 +136,14 @@ Print privateKey
 #### Export Mnemonic
 ```javascript
 exportMnemonicFromKeystore(JSON.stringify(keystore), 'password')
+  .then(res => {
+    console.log('mnemonic export', res);
+  })
+  .catch(err => {
+    console.log(err);
+  });
+
+exportMnemonic('mnemonic', 'address', "m/44'/60'/0'/0/0", 'password')
   .then(res => {
     console.log('mnemonic export', res);
   })
@@ -176,6 +198,58 @@ Print Results
   "publicKey" : ...,//option 
 }
 ```
+#### Singer
+```javascript
+getWalletSigner(
+  rpcURL,
+  'keystore',
+  'password',
+)
+  .then(walletSigner => {
+    console.log('walletSigner', walletSigner);
+  })
+  .catch(err => {
+    console.log(err);
+  });
+
+getWalletSignerWithMnemonic(
+  rpcURL,
+  'mnemonic',
+  'address',
+  "m/44'/60'/0'/0/0",
+  'password',
+)
+  .then(walletSigner => {
+    console.log('walletSigner', walletSigner);
+  })
+  .catch(err => {
+    console.log(err);
+  });
+
+getWalletSignerWithPrivateKey(
+  rpcURL,
+  'privateKey',
+)
+  .then(walletSigner => {
+    console.log('walletSigner', walletSigner);
+  })
+  .catch(err => {
+    console.log(err);
+  });
+
+getSignerContractWithWalletProvider(
+  contractAddress,
+  contractAbi,
+  walletSigner,
+)
+  .then(contractSigner => {
+    console.log('contractSigner', contractSigner);
+  })
+  .catch(err => {
+    console.log(err);
+  });
+```
+
 #### Sign Message
 ```javascript
 signMessage(
