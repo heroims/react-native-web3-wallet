@@ -1,11 +1,11 @@
 diff --git a/node_modules/react-native-web3-wallet/index.js b/node_modules/react-native-web3-wallet/index.js
-index f59688b..e8c4e39 100644
+index 4365965..c4653b9 100644
 --- a/node_modules/react-native-web3-wallet/index.js
 +++ b/node_modules/react-native-web3-wallet/index.js
-@@ -28,38 +28,44 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
-             //2048 words
+@@ -29,38 +29,43 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
              let mnemonic = ethers.utils.entropyToMnemonic(privateSeed);
-     
+             
+             mnemonicPassword = mnemonicPassword ? mnemonicPassword : '';
 -            let node = ethers.utils.HDNode.fromMnemonic(mnemonic, mnemonicPassword);
 -            let hdnode = node.derivePath(path);
 -            let mnemonicArr = mnemonic.split(' ');
@@ -21,7 +21,6 @@ index f59688b..e8c4e39 100644
 -            if(needPrivateKey){
 -                response.privateKey=hdnode.privateKey;
 -            }
-+            mnemonicPassword = mnemonicPassword ? mnemonicPassword : '';
 +            ethers.utils.HDNode.fromMnemonic(mnemonic, mnemonicPassword)
 +                .then(node=>{
 +                    let hdnode = node.derivePath(path);
@@ -47,10 +46,10 @@ index f59688b..e8c4e39 100644
 +                        let wallet = new ethers.Wallet(mnemonicPassword ? hdnode.privateKey : hdnode)
 +                        wallet.encrypt(password).then(res=>{
 +                            let jsonObj = JSON.parse(res);
-                                 
+                         
 -                    response.keystore = jsonObj;
 +                            response.keystore = jsonObj;
-                         
+                 
 -                    fulfill(response)
 +                            fulfill(response)
 +                        })
@@ -73,7 +72,7 @@ index f59688b..e8c4e39 100644
          } catch (error) {
              reject(error);
          }
-@@ -77,14 +83,15 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
+@@ -78,14 +83,15 @@ export function createWallet(password, path = "m/44'/60'/0'/0/0", seedByte = 16,
   */
  export function exportPrivateKeyFromMnemonic(mnemonic, path = "m/44'/60'/0'/0/0", password = ''){
      return new Promise((fulfill, reject)=>{
@@ -97,7 +96,7 @@ index f59688b..e8c4e39 100644
      });
  }
  
-@@ -144,26 +151,31 @@ export function exportMnemonicFromKeystore(keystore, password){
+@@ -145,26 +151,31 @@ export function exportMnemonicFromKeystore(keystore, password){
  export function exportMnemonic(mnemonic, address, path = "m/44'/60'/0'/0/0", password = ''){
      return new Promise((fulfill, reject)=>{
          password = password ? password : '';
@@ -118,7 +117,7 @@ index f59688b..e8c4e39 100644
 +                        passwordError = true;
 +                    }
 +                }
-                 
+         
 -        if(!passwordError){
 -            let mnemonicArr = res.mnemonic.phrase.split(' ');
 -            let shuffleMnemonicArr = shuffleArray(mnemonicArr);
@@ -147,7 +146,7 @@ index f59688b..e8c4e39 100644
      });
  }
  
-@@ -200,20 +212,31 @@ export function exportKeystore(keystore, password){
+@@ -201,20 +212,31 @@ export function exportKeystore(keystore, password){
  export function exportKeystoreFromMnemonic(password, mnemonic, address, path = "m/44'/60'/0'/0/0", mnemonicPassword = ''){
      return new Promise((fulfill, reject)=>{
          mnemonicPassword = mnemonicPassword ? mnemonicPassword : '';
@@ -189,7 +188,7 @@ index f59688b..e8c4e39 100644
      });
  }
  
-@@ -276,43 +299,44 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
+@@ -277,43 +299,44 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
   */
  export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", needPrivateKey = false, needPublicKey = false, needKeystore = true, mnemonicPassword = ''){
      return new Promise((fulfill, reject)=>{
@@ -237,7 +236,7 @@ index f59688b..e8c4e39 100644
 +                if(needKeystore){
 +                    wallet.encrypt(password).then(res=>{
 +                        let jsonObj = JSON.parse(res);
-         
+     
 -                    response.keystore = jsonObj;
 +                        response.keystore = jsonObj;
 +                        fulfill(response);
@@ -267,7 +266,7 @@ index f59688b..e8c4e39 100644
      });
  }
  
-@@ -944,25 +968,30 @@ export function getWalletSignerWithMnemonic(network, mnemonic, address = '', pat
+@@ -945,25 +968,30 @@ export function getWalletSignerWithMnemonic(network, mnemonic, address = '', pat
                  }
              }
              password = password ? password : '';
