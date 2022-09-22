@@ -1,0 +1,74 @@
+{
+  "name": "@react-native-web3-wallet/bitcoin",
+  "version": "1.0.0",
+  "description": "This is a safe web3 wallet tools, to help with develop wallet applications quickly.",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "interface.ts"
+  ],
+  "scripts": {
+    "postinstall": "rn-nodeify --install buffer,stream,assert,events,crypto,vm,process --hack",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "react-native",
+    "web3",
+    "bitcoinjs",
+    "wallet"
+  ],
+  "author": "heroims",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/heroims/react-native-web3-wallet/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/heroims/react-native-web3-wallet.git"
+  },
+  "peerDependencies": {
+    "react-native": "*",
+    "rn-nodeify": "*",
+    "react-native-crypto": "*",
+    "react-native-get-random-values": "*"
+  },
+  "dependencies": {
+    "assert": "^1.5.0",
+    "bip32": "^3.0.1",
+    "bip39": "^3.0.4",
+    "bitcoinjs-lib": "^6.0.2",
+    "buffer": "^4.9.2",
+    "ecpair": "^2.0.1",
+    "events": "^1.1.1",
+    "process": "^0.11.10",
+    "react-native-crypto": "^2.2.0",
+    "react-native-get-random-values": "^1.8.0",
+    "react-native-randombytes": "^3.6.1",
+    "readable-stream": "^1.0.33",
+    "rn-nodeify": "^10.3.0",
+    "stream-browserify": "^1.0.0",
+    "tiny-secp256k1": "^1.1.6",
+    "vm-browserify": "0.0.4"
+  },
+  "react-native": {
+    "crypto": "react-native-crypto",
+    "_stream_transform": "readable-stream/transform",
+    "_stream_readable": "readable-stream/readable",
+    "_stream_writable": "readable-stream/writable",
+    "_stream_duplex": "readable-stream/duplex",
+    "_stream_passthrough": "readable-stream/passthrough",
+    "stream": "stream-browserify",
+    "vm": "vm-browserify"
+  },
+  "browser": {
+    "crypto": "react-native-crypto",
+    "_stream_transform": "readable-stream/transform",
+    "_stream_readable": "readable-stream/readable",
+    "_stream_writable": "readable-stream/writable",
+    "_stream_duplex": "readable-stream/duplex",
+    "_stream_passthrough": "readable-stream/passthrough",
+    "stream": "stream-browserify",
+    "vm": "vm-browserify"
+  }
+}
