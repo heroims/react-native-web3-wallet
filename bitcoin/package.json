@@ -1,5 +1,5 @@
 {
-  "name": "@react-native-web3-wallet/bitcoin",
+  "name": "react-native-web3-wallet-bitcoin",
   "version": "1.0.0",
   "description": "This is a safe web3 wallet tools, to help with develop wallet applications quickly.",
   "main": "index.js",
