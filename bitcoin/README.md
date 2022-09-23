@@ -7,7 +7,7 @@ This is a safe web3 wallet tools, to help with develop wallet applications quick
 ## Installation
 
 ```bash
-npm install react-native-web3-wallet/bitcoin --save
+npm install react-native-web3-wallet-bitcoin --save
 npm install react-native-get-random-values react-native-crypto rn-nodeify  --save
 ```
 `npm install`(at this point the `post-install` does `rn-nodeify --install fs,dgram,process,path,console --hack`)
