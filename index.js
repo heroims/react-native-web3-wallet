@@ -1086,6 +1086,14 @@ export function hexlify(value){
     return ethers.utils.hexlify(value);
 }
 
+export function encodeABI(types, values){
+    return ethers.utils.defaultAbiCoder.encode(types, values);
+}
+
+export function decodeABI(types, data){
+    return ethers.utils.defaultAbiCoder.decode(types, data);
+}
+
 export function createBigNumber(value){
     return BigNumber.from(value);
 }

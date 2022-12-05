@@ -17,8 +17,8 @@ npx pod-install
 
 ### fix React Native so slow
 ```bash
-npm install react-native-scrypt
-npm install react-native-aes-crypto
+npm install react-native-scrypt@1.2.1
+npm install react-native-aes-crypto@2.1.0
 ```
 move `patches` finder to your root directory, and execute command `npx patch-package`
 

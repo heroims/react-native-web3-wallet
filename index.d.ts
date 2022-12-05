@@ -323,4 +323,8 @@ export declare function arrayify(value: any): Uint8Array;
 
 export declare function hexlify(value: any): string;
 
+export declare function encodeABI(types: (string|ethers.utils.ParamType)[], values: any[]): string;
+
+export declare function decodeABI(types: (string|ethers.utils.ParamType)[], values: ethers.utils.BytesLike): ethers.utils.Result;
+
 export declare function createBigNumber(value: any): BigNumber;
