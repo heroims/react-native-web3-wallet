@@ -34,7 +34,7 @@ index c0eee41..c05eb92 100644
          // Compute the message authentication code, used to check the password
          const mac = keccak256(concat([macPrefix, ciphertext]));
 diff --git a/node_modules/@ethersproject/json-wallets/lib/keystore.js b/node_modules/@ethersproject/json-wallets/lib/keystore.js
-index e981cf3..a81b8f7 100644
+index e981cf3..39f5258 100644
 --- a/node_modules/@ethersproject/json-wallets/lib/keystore.js
 +++ b/node_modules/@ethersproject/json-wallets/lib/keystore.js
 @@ -56,17 +56,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -59,7 +59,7 @@ index e981cf3..a81b8f7 100644
  var _version_1 = require("./_version");
  var logger = new logger_1.Logger(_version_1.version);
  // Exported Types
-@@ -95,66 +97,103 @@ function _decrypt(data, key, ciphertext) {
+@@ -95,66 +97,109 @@ function _decrypt(data, key, ciphertext) {
      return null;
  }
  function _getAccount(data, key) {
@@ -142,13 +142,19 @@ index e981cf3..a81b8f7 100644
 +            };
 +            // Version 0.1 x-ethers metadata must contain an encrypted mnemonic phrase
 +            if ((0, utils_1.searchPath)(data, "x-ethers/version") === "0.1") {
-+                var mnemonicCiphertext = (0, utils_1.looseArrayify)((0, utils_1.searchPath)(data, "x-ethers/mnemonicCiphertext"));
-+                var mnemonicIv = (0, utils_1.looseArrayify)((0, utils_1.searchPath)(data, "x-ethers/mnemonicCounter"));
-+                var mnemonicCounter = new aes_js_1.default.Counter(mnemonicIv);
-+                var mnemonicAesCtr = new aes_js_1.default.ModeOfOperation.ctr(mnemonicKey, mnemonicCounter);
-+                var path = (0, utils_1.searchPath)(data, "x-ethers/path") || hdnode_1.defaultPath;
-+                var locale = (0, utils_1.searchPath)(data, "x-ethers/locale") || "en";
-+                var entropy = (0, bytes_1.arrayify)(mnemonicAesCtr.decrypt(mnemonicCiphertext));
++                var mnemonicCiphertext,mnemonicIv,mnemonicCounter,mnemonicAesCtr,path,locale,entropy;
++                try {
++                    mnemonicCiphertext = (0, utils_1.looseArrayify)((0, utils_1.searchPath)(data, "x-ethers/mnemonicCiphertext"));
++                    mnemonicIv = (0, utils_1.looseArrayify)((0, utils_1.searchPath)(data, "x-ethers/mnemonicCounter"));
++                    mnemonicCounter = new aes_js_1.default.Counter(mnemonicIv);
++                    mnemonicAesCtr = new aes_js_1.default.ModeOfOperation.ctr(mnemonicKey, mnemonicCounter);
++                    path = (0, utils_1.searchPath)(data, "x-ethers/path") || hdnode_1.defaultPath;
++                    locale = (0, utils_1.searchPath)(data, "x-ethers/locale") || "en";
++                    entropy = (0, bytes_1.arrayify)(mnemonicAesCtr.decrypt(mnemonicCiphertext));
++                } catch (error) {
++                    resolve(new KeystoreAccount(account)); 
++                    return;
++                }
 +                try {
 +                    var mnemonic = (0, hdnode_1.entropyToMnemonic)(entropy, locale);
 +                    hdnode_1.HDNode.fromMnemonic(mnemonic, null, locale)
@@ -215,7 +221,7 @@ index e981cf3..a81b8f7 100644
  }
  function _computeKdfKey(data, password, pbkdf2Func, scryptFunc, progressCallback) {
      var passwordBytes = (0, utils_1.getPassword)(password);
-@@ -210,7 +249,7 @@ function decryptSync(json, password) {
+@@ -210,7 +255,7 @@ function decryptSync(json, password) {
      var key = _computeKdfKey(data, password, pbkdf2Sync, scrypt_js_1.default.syncScrypt);
      return _getAccount(data, key);
  }
@@ -224,7 +230,7 @@ index e981cf3..a81b8f7 100644
  function decrypt(json, password, progressCallback) {
      return __awaiter(this, void 0, void 0, function () {
          var data, key;
-@@ -228,23 +267,42 @@ function decrypt(json, password, progressCallback) {
+@@ -228,23 +273,42 @@ function decrypt(json, password, progressCallback) {
  }
  exports.decrypt = decrypt;
  function encrypt(account, password, options, progressCallback) {
@@ -282,7 +288,7 @@ index e981cf3..a81b8f7 100644
      // The options are optional, so adjust the call as needed
      if (typeof (options) === "function" && !progressCallback) {
          progressCallback = options;
-@@ -282,7 +340,7 @@ function encrypt(account, password, options, progressCallback) {
+@@ -282,7 +346,7 @@ function encrypt(account, password, options, progressCallback) {
      if (options.iv) {
          iv = (0, bytes_1.arrayify)(options.iv);
          if (iv.length !== 16) {
@@ -291,7 +297,7 @@ index e981cf3..a81b8f7 100644
          }
      }
      else {
-@@ -293,7 +351,7 @@ function encrypt(account, password, options, progressCallback) {
+@@ -293,7 +357,7 @@ function encrypt(account, password, options, progressCallback) {
      if (options.uuid) {
          uuidRandom = (0, bytes_1.arrayify)(options.uuid);
          if (uuidRandom.length !== 16) {
@@ -300,7 +306,7 @@ index e981cf3..a81b8f7 100644
          }
      }
      else {
-@@ -312,10 +370,12 @@ function encrypt(account, password, options, progressCallback) {
+@@ -312,10 +376,12 @@ function encrypt(account, password, options, progressCallback) {
              p = options.scrypt.p;
          }
      }
@@ -314,7 +320,7 @@ index e981cf3..a81b8f7 100644
          key = (0, bytes_1.arrayify)(key);
          // This will be used to encrypt the wallet (as per Web3 secret storage)
          var derivedKey = key.slice(0, 16);
-@@ -323,9 +383,13 @@ function encrypt(account, password, options, progressCallback) {
+@@ -323,9 +389,13 @@ function encrypt(account, password, options, progressCallback) {
          // This will be used to encrypt the mnemonic phrase (if any)
          var mnemonicKey = key.slice(32, 64);
          // Encrypt the private key
@@ -328,7 +334,7 @@ index e981cf3..a81b8f7 100644
          // Compute the message authentication code, used to check the password
          var mac = (0, keccak256_1.keccak256)((0, bytes_1.concat)([macPrefix, ciphertext]));
          // See: https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
-@@ -373,7 +437,10 @@ function encrypt(account, password, options, progressCallback) {
+@@ -373,7 +443,10 @@ function encrypt(account, password, options, progressCallback) {
                  version: "0.1"
              };
          }
@@ -341,7 +347,7 @@ index e981cf3..a81b8f7 100644
  }
  exports.encrypt = encrypt;
 diff --git a/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts b/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts
-index 938cb82..3d02c80 100644
+index 938cb82..db1c893 100644
 --- a/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts
 +++ b/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts
 @@ -1,19 +1,20 @@
@@ -367,7 +373,37 @@ index 938cb82..3d02c80 100644
  
  import { Logger } from "@ethersproject/logger";
  import { version } from "./_version";
-@@ -148,11 +149,30 @@ type ScryptFunc<T> = (pw: Uint8Array, salt: Uint8Array, n: number, r: number, p:
+@@ -110,17 +111,21 @@ function _getAccount(data: any, key: Uint8Array): KeystoreAccount {
+ 
+     // Version 0.1 x-ethers metadata must contain an encrypted mnemonic phrase
+     if (searchPath(data, "x-ethers/version") === "0.1") {
+-        const mnemonicCiphertext = looseArrayify(searchPath(data, "x-ethers/mnemonicCiphertext"));
+-        const mnemonicIv = looseArrayify(searchPath(data, "x-ethers/mnemonicCounter"));
+-
+-        const mnemonicCounter = new aes.Counter(mnemonicIv);
+-        const mnemonicAesCtr = new aes.ModeOfOperation.ctr(mnemonicKey, mnemonicCounter);
++        let mnemonicCiphertext,mnemonicIv,mnemonicCounter,mnemonicAesCtr,path,locale,entropy;
++        try {
++            mnemonicCiphertext = looseArrayify(searchPath(data, "x-ethers/mnemonicCiphertext"));
++            mnemonicIv = looseArrayify(searchPath(data, "x-ethers/mnemonicCounter"));
+     
+-        const path = searchPath(data, "x-ethers/path") || defaultPath;
+-        const locale = searchPath(data, "x-ethers/locale") || "en";
++            mnemonicCounter = new aes.Counter(mnemonicIv);
++            mnemonicAesCtr = new aes.ModeOfOperation.ctr(mnemonicKey, mnemonicCounter);
+     
+-        const entropy = arrayify(mnemonicAesCtr.decrypt(mnemonicCiphertext));
++            path = searchPath(data, "x-ethers/path") || defaultPath;
++            locale = searchPath(data, "x-ethers/locale") || "en";
+     
++            entropy = arrayify(mnemonicAesCtr.decrypt(mnemonicCiphertext));
++        } catch (error) {
++            return new KeystoreAccount(account);
++        }
+         try {
+             const mnemonic = entropyToMnemonic(entropy, locale);
+             const node = HDNode.fromMnemonic(mnemonic, null, locale).derivePath(path);
+@@ -148,11 +153,30 @@ type ScryptFunc<T> = (pw: Uint8Array, salt: Uint8Array, n: number, r: number, p:
  type Pbkdf2Func<T> = (pw: Uint8Array, salt: Uint8Array, c: number, dkLen: number, prfFunc: string) => T;
  
  function pbkdf2Sync(passwordBytes: Uint8Array, salt: Uint8Array, count: number, dkLen: number, prfFunc: string): Uint8Array {
@@ -400,7 +436,7 @@ index 938cb82..3d02c80 100644
  }
  
  function _computeKdfKey<T>(data: any, password: Bytes | string, pbkdf2Func: Pbkdf2Func<T>, scryptFunc: ScryptFunc<T>, progressCallback?: ProgressCallback): T {
-@@ -225,153 +245,162 @@ export async function decrypt(json: string, password: Bytes | string, progressCa
+@@ -225,153 +249,162 @@ export async function decrypt(json: string, password: Bytes | string, progressCa
  
  
  export function encrypt(account: ExternallyOwnedAccount, password: Bytes | string, options?: EncryptOptions, progressCallback?: ProgressCallback): Promise<string> {
@@ -436,10 +472,10 @@ index 938cb82..3d02c80 100644
 -        options = {};
 -    }
 -    if (!options) { options = {}; }
--
+ 
 -    const privateKey: Uint8Array = arrayify(account.privateKey);
 -    const passwordBytes = getPassword(password);
-     
+-
 -    let entropy: Uint8Array = null
 -    let path: string = null;
 -    let locale: string = null;
@@ -700,7 +736,7 @@ index 938cb82..3d02c80 100644
 -                version: "0.1"
 -            };
 -        }
-     
+ 
 -        return JSON.stringify(data);
 +        } catch (e) {
 +            return reject(e);
