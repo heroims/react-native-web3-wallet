@@ -231,7 +231,7 @@ export function exportKeystoreFromMnemonic(password, mnemonic, address, path = "
 export function importPrivateKey(privateKey, password, needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
         try {
-            var realPrivatekey = privateKey;
+            let realPrivatekey = privateKey;
             if(privateKey.substring(0,2) !== '0x'){
                 realPrivatekey = '0x' + privateKey;
             }
@@ -1054,7 +1054,7 @@ export function getProvider(network, network_detail = {name:'', chainId:'',ensAd
  * @return {[]} 
  */
 export function shuffleArray(origin) {
-    var array = origin.slice();
+    let array = origin.slice();
     return ethers.utils.shuffled(array);
 };
 
