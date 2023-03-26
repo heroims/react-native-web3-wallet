@@ -1,8 +1,18 @@
 diff --git a/node_modules/react-native-aes-crypto/android/src/main/java/com/tectiv3/aes/RCTAes.java b/node_modules/react-native-aes-crypto/android/src/main/java/com/tectiv3/aes/RCTAes.java
-index 5871b6f..7ee7696 100755
+index 5871b6f..fab87f8 100755
 --- a/node_modules/react-native-aes-crypto/android/src/main/java/com/tectiv3/aes/RCTAes.java
 +++ b/node_modules/react-native-aes-crypto/android/src/main/java/com/tectiv3/aes/RCTAes.java
-@@ -74,10 +74,15 @@ public class RCTAes extends ReactContextBaseJavaModule {
+@@ -23,6 +23,9 @@ import javax.crypto.spec.PBEKeySpec;
+ import javax.crypto.SecretKeyFactory;
+ import javax.crypto.Mac;
+ 
++import org.spongycastle.crypto.Digest;
++import org.spongycastle.crypto.digests.SHA1Digest;
++import org.spongycastle.crypto.digests.SHA256Digest;
+ import org.spongycastle.crypto.digests.SHA512Digest;
+ import org.spongycastle.crypto.generators.PKCS5S2ParametersGenerator;
+ import org.spongycastle.crypto.params.KeyParameter;
+@@ -74,10 +77,15 @@ public class RCTAes extends ReactContextBaseJavaModule {
          }
      }
  
@@ -20,7 +30,7 @@ index 5871b6f..7ee7696 100755
              promise.resolve(strs);
          } catch (Exception e) {
              promise.reject("-1", e.getMessage());
-@@ -175,10 +180,20 @@ public class RCTAes extends ReactContextBaseJavaModule {
+@@ -175,10 +183,20 @@ public class RCTAes extends ReactContextBaseJavaModule {
          return new String(hexChars);
      }
  
