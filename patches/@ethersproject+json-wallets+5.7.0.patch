@@ -1,8 +1,8 @@
 diff --git a/node_modules/@ethersproject/json-wallets/lib.esm/keystore.js b/node_modules/@ethersproject/json-wallets/lib.esm/keystore.js
-index c0eee41..c05eb92 100644
+index c0eee41..10ba7ed 100644
 --- a/node_modules/@ethersproject/json-wallets/lib.esm/keystore.js
 +++ b/node_modules/@ethersproject/json-wallets/lib.esm/keystore.js
-@@ -9,12 +9,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
+@@ -9,18 +9,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
      });
  };
  import aes from "aes-js";
@@ -17,7 +17,14 @@ index c0eee41..c05eb92 100644
  import { randomBytes } from "@ethersproject/random";
  import { Description } from "@ethersproject/properties";
  import { computeAddress } from "@ethersproject/transactions";
-@@ -80,6 +81,7 @@ function _getAccount(data, key) {
+ import { getPassword, looseArrayify, searchPath, uuidV4, zpad } from "./utils";
+ import { Logger } from "@ethersproject/logger";
+ import { version } from "./_version";
++import { toUtf8String } from "@ethersproject/strings";
+ const logger = new Logger(version);
+ // Exported Types
+ function hasMnemonic(value) {
+@@ -80,6 +82,7 @@ function _getAccount(data, key) {
          const entropy = arrayify(mnemonicAesCtr.decrypt(mnemonicCiphertext));
          try {
              const mnemonic = entropyToMnemonic(entropy, locale);
@@ -25,7 +32,27 @@ index c0eee41..c05eb92 100644
              const node = HDNode.fromMnemonic(mnemonic, null, locale).derivePath(path);
              if (node.privateKey != account.privateKey) {
                  throw new Error("mnemonic mismatch");
-@@ -262,6 +264,7 @@ export function encrypt(account, password, options, progressCallback) {
+@@ -98,10 +101,17 @@ function _getAccount(data, key) {
+     return new KeystoreAccount(account);
+ }
+ function pbkdf2Sync(passwordBytes, salt, count, dkLen, prfFunc) {
+-    return arrayify(_pbkdf2(passwordBytes, salt, count, dkLen, prfFunc));
++    return arrayify(Buffer.from(Aes.pbkdf2Sync(toUtf8String(passwordBytes), toUtf8String(salt), count, dkLen, prfFunc),'hex'));
+ }
+ function pbkdf2(passwordBytes, salt, count, dkLen, prfFunc) {
+-    return Promise.resolve(pbkdf2Sync(passwordBytes, salt, count, dkLen, prfFunc));
++    return  new Promise(function (resolve, reject) {
++        Aes.pbkdf2(toUtf8String(passwordBytes), toUtf8String(salt), count, dkLen, prfFunc)
++            .then(res => {
++                resolve(arrayify(Buffer.from(res, 'hex')));
++            }).catch(err => {
++                reject(err);
++            });
++    });
+ }
+ function _computeKdfKey(data, password, pbkdf2Func, scryptFunc, progressCallback) {
+     const passwordBytes = getPassword(password);
+@@ -262,6 +272,7 @@ export function encrypt(account, password, options, progressCallback) {
          // Encrypt the private key
          const counter = new aes.Counter(iv);
          const aesCtr = new aes.ModeOfOperation.ctr(derivedKey, counter);
@@ -34,7 +61,7 @@ index c0eee41..c05eb92 100644
          // Compute the message authentication code, used to check the password
          const mac = keccak256(concat([macPrefix, ciphertext]));
 diff --git a/node_modules/@ethersproject/json-wallets/lib/keystore.js b/node_modules/@ethersproject/json-wallets/lib/keystore.js
-index e981cf3..39f5258 100644
+index e981cf3..df65553 100644
 --- a/node_modules/@ethersproject/json-wallets/lib/keystore.js
 +++ b/node_modules/@ethersproject/json-wallets/lib/keystore.js
 @@ -56,17 +56,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -59,7 +86,7 @@ index e981cf3..39f5258 100644
  var _version_1 = require("./_version");
  var logger = new logger_1.Logger(_version_1.version);
  // Exported Types
-@@ -95,66 +97,109 @@ function _decrypt(data, key, ciphertext) {
+@@ -95,66 +97,101 @@ function _decrypt(data, key, ciphertext) {
      return null;
  }
  function _getAccount(data, key) {
@@ -197,21 +224,13 @@ index e981cf3..39f5258 100644
  }
  function pbkdf2Sync(passwordBytes, salt, count, dkLen, prfFunc) {
 -    return (0, bytes_1.arrayify)((0, pbkdf2_1.pbkdf2)(passwordBytes, salt, count, dkLen, prfFunc));
-+    var resString;
-+    var finished = false;
-+    AES_js_1.Aes.pbkdf2((0, strings_1.toUtf8String)(passwordBytes), (0, strings_1.toUtf8String)(salt), count, dkLen)
-+        .then(function (res) {
-+        resString = res;
-+    }).finally(function (err) {
-+        finished = true;
-+    });
-+    while (!finished) { }
++    var resString = AES_js_1.Aes.pbkdf2Sync((0, strings_1.toUtf8String)(passwordBytes), (0, strings_1.toUtf8String)(salt), count, dkLen, prfFunc);
 +    return (0, bytes_1.arrayify)(Buffer.from(resString, 'hex'));
  }
  function pbkdf2(passwordBytes, salt, count, dkLen, prfFunc) {
 -    return Promise.resolve(pbkdf2Sync(passwordBytes, salt, count, dkLen, prfFunc));
 +    return new Promise(function (resolve, reject) {
-+        AES_js_1.Aes.pbkdf2((0, strings_1.toUtf8String)(passwordBytes), (0, strings_1.toUtf8String)(salt), count, dkLen)
++        AES_js_1.Aes.pbkdf2((0, strings_1.toUtf8String)(passwordBytes), (0, strings_1.toUtf8String)(salt), count, dkLen, prfFunc)
 +            .then(function (res) {
 +            resolve((0, bytes_1.arrayify)(Buffer.from(res, 'hex')));
 +        })["catch"](function (err) {
@@ -221,7 +240,7 @@ index e981cf3..39f5258 100644
  }
  function _computeKdfKey(data, password, pbkdf2Func, scryptFunc, progressCallback) {
      var passwordBytes = (0, utils_1.getPassword)(password);
-@@ -210,7 +255,7 @@ function decryptSync(json, password) {
+@@ -210,7 +247,7 @@ function decryptSync(json, password) {
      var key = _computeKdfKey(data, password, pbkdf2Sync, scrypt_js_1.default.syncScrypt);
      return _getAccount(data, key);
  }
@@ -230,7 +249,7 @@ index e981cf3..39f5258 100644
  function decrypt(json, password, progressCallback) {
      return __awaiter(this, void 0, void 0, function () {
          var data, key;
-@@ -228,23 +273,42 @@ function decrypt(json, password, progressCallback) {
+@@ -228,23 +265,42 @@ function decrypt(json, password, progressCallback) {
  }
  exports.decrypt = decrypt;
  function encrypt(account, password, options, progressCallback) {
@@ -288,7 +307,7 @@ index e981cf3..39f5258 100644
      // The options are optional, so adjust the call as needed
      if (typeof (options) === "function" && !progressCallback) {
          progressCallback = options;
-@@ -282,7 +346,7 @@ function encrypt(account, password, options, progressCallback) {
+@@ -282,7 +338,7 @@ function encrypt(account, password, options, progressCallback) {
      if (options.iv) {
          iv = (0, bytes_1.arrayify)(options.iv);
          if (iv.length !== 16) {
@@ -297,7 +316,7 @@ index e981cf3..39f5258 100644
          }
      }
      else {
-@@ -293,7 +357,7 @@ function encrypt(account, password, options, progressCallback) {
+@@ -293,7 +349,7 @@ function encrypt(account, password, options, progressCallback) {
      if (options.uuid) {
          uuidRandom = (0, bytes_1.arrayify)(options.uuid);
          if (uuidRandom.length !== 16) {
@@ -306,7 +325,7 @@ index e981cf3..39f5258 100644
          }
      }
      else {
-@@ -312,10 +376,12 @@ function encrypt(account, password, options, progressCallback) {
+@@ -312,10 +368,12 @@ function encrypt(account, password, options, progressCallback) {
              p = options.scrypt.p;
          }
      }
@@ -320,21 +339,19 @@ index e981cf3..39f5258 100644
          key = (0, bytes_1.arrayify)(key);
          // This will be used to encrypt the wallet (as per Web3 secret storage)
          var derivedKey = key.slice(0, 16);
-@@ -323,9 +389,13 @@ function encrypt(account, password, options, progressCallback) {
+@@ -323,9 +381,11 @@ function encrypt(account, password, options, progressCallback) {
          // This will be used to encrypt the mnemonic phrase (if any)
          var mnemonicKey = key.slice(32, 64);
          // Encrypt the private key
-+        var start = performance.now();
 +
          var counter = new aes_js_1.default.Counter(iv);
          var aesCtr = new aes_js_1.default.ModeOfOperation.ctr(derivedKey, counter);
          var ciphertext = (0, bytes_1.arrayify)(aesCtr.encrypt(privateKey));
-+        var end = performance.now();
-+        console.log('aes done', `${end - start}ms\n`);
++
          // Compute the message authentication code, used to check the password
          var mac = (0, keccak256_1.keccak256)((0, bytes_1.concat)([macPrefix, ciphertext]));
          // See: https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
-@@ -373,7 +443,10 @@ function encrypt(account, password, options, progressCallback) {
+@@ -373,7 +433,10 @@ function encrypt(account, password, options, progressCallback) {
                  version: "0.1"
              };
          }
@@ -347,7 +364,7 @@ index e981cf3..39f5258 100644
  }
  exports.encrypt = encrypt;
 diff --git a/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts b/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts
-index 938cb82..db1c893 100644
+index 938cb82..3c21c3b 100644
 --- a/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts
 +++ b/node_modules/@ethersproject/json-wallets/src.ts/keystore.ts
 @@ -1,19 +1,20 @@
@@ -403,29 +420,19 @@ index 938cb82..db1c893 100644
          try {
              const mnemonic = entropyToMnemonic(entropy, locale);
              const node = HDNode.fromMnemonic(mnemonic, null, locale).derivePath(path);
-@@ -148,11 +153,30 @@ type ScryptFunc<T> = (pw: Uint8Array, salt: Uint8Array, n: number, r: number, p:
+@@ -148,11 +153,20 @@ type ScryptFunc<T> = (pw: Uint8Array, salt: Uint8Array, n: number, r: number, p:
  type Pbkdf2Func<T> = (pw: Uint8Array, salt: Uint8Array, c: number, dkLen: number, prfFunc: string) => T;
  
  function pbkdf2Sync(passwordBytes: Uint8Array, salt: Uint8Array, count: number, dkLen: number, prfFunc: string): Uint8Array {
 -    return arrayify(_pbkdf2(passwordBytes, salt, count, dkLen, prfFunc));
-+    let resString;
-+    var finished=false;
-+    Aes.pbkdf2(toUtf8String(passwordBytes), toUtf8String(salt), count, dkLen)
-+    .then(res=>{
-+        resString = res;
-+        finished = true;
-+    })
-+    .catch(err=>{
-+        finished =true;
-+    });
-+    while(!finished){}
++    let resString = Aes.pbkdf2Sync(toUtf8String(passwordBytes), toUtf8String(salt), count, dkLen, prfFunc);
 +    return arrayify(Buffer.from(resString,'hex'));
  }
  
  function pbkdf2(passwordBytes: Uint8Array, salt: Uint8Array, count: number, dkLen: number, prfFunc: string): Promise<Uint8Array> {
 -    return Promise.resolve(pbkdf2Sync(passwordBytes, salt, count, dkLen, prfFunc));
 +    return new Promise((resolve,reject)=>{
-+        Aes.pbkdf2(toUtf8String(passwordBytes), toUtf8String(salt), count, dkLen)
++        Aes.pbkdf2(toUtf8String(passwordBytes), toUtf8String(salt), count, dkLen, prfFunc)
 +        .then(res=>{
 +            resolve(arrayify(Buffer.from(res,'hex')));
 +        })
@@ -436,7 +443,7 @@ index 938cb82..db1c893 100644
  }
  
  function _computeKdfKey<T>(data: any, password: Bytes | string, pbkdf2Func: Pbkdf2Func<T>, scryptFunc: ScryptFunc<T>, progressCallback?: ProgressCallback): T {
-@@ -225,153 +249,162 @@ export async function decrypt(json: string, password: Bytes | string, progressCa
+@@ -225,153 +239,162 @@ export async function decrypt(json: string, password: Bytes | string, progressCa
  
  
  export function encrypt(account: ExternallyOwnedAccount, password: Bytes | string, options?: EncryptOptions, progressCallback?: ProgressCallback): Promise<string> {
@@ -461,7 +468,7 @@ index 938cb82..db1c893 100644
 +                throw new Error("address/privateKey mismatch");
              }
 -        }
--
+ 
 -    } catch (e) {
 -        return Promise.reject(e);
 -    }
@@ -472,7 +479,7 @@ index 938cb82..db1c893 100644
 -        options = {};
 -    }
 -    if (!options) { options = {}; }
- 
+-
 -    const privateKey: Uint8Array = arrayify(account.privateKey);
 -    const passwordBytes = getPassword(password);
 -
