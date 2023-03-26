@@ -1,22 +1,23 @@
 diff --git a/node_modules/react-native-scrypt/android/build.gradle b/node_modules/react-native-scrypt/android/build.gradle
-index dac9cc5..417a7a0 100644
+index dac9cc5..cc29045 100644
 --- a/node_modules/react-native-scrypt/android/build.gradle
 +++ b/node_modules/react-native-scrypt/android/build.gradle
-@@ -54,6 +54,6 @@ repositories {
+@@ -54,6 +54,5 @@ repositories {
  }
  
  dependencies {
 -    compile 'com.facebook.react:react-native:+'
 +    implementation 'com.facebook.react:react-native:+'
  }
+-
 diff --git a/node_modules/react-native-scrypt/android/src/main/java/com/crypho/scrypt/RNScryptModule.java b/node_modules/react-native-scrypt/android/src/main/java/com/crypho/scrypt/RNScryptModule.java
-index f349b7f..6b75b5b 100644
+index f349b7f..306be29 100644
 --- a/node_modules/react-native-scrypt/android/src/main/java/com/crypho/scrypt/RNScryptModule.java
 +++ b/node_modules/react-native-scrypt/android/src/main/java/com/crypho/scrypt/RNScryptModule.java
 @@ -44,6 +44,21 @@ public class RNScryptModule extends ReactContextBaseJavaModule {
      }
    }
- 
+  
 +  @ReactMethod(isBlockingSynchronousMethod = true)
 +  public String scryptSync(
 +          String passwd,
@@ -177,7 +178,7 @@ index f55e831..a474cd5 100644
 +})(this);
 \ No newline at end of file
 diff --git a/node_modules/react-native-scrypt/ios/RNScrypt.m b/node_modules/react-native-scrypt/ios/RNScrypt.m
-index 5cf6fae..976c75e 100644
+index 5cf6fae..715f3cf 100644
 --- a/node_modules/react-native-scrypt/ios/RNScrypt.m
 +++ b/node_modules/react-native-scrypt/ios/RNScrypt.m
 @@ -63,12 +63,16 @@ RCT_REMAP_METHOD(scrypt, scrypt:(NSString *)passwd
@@ -195,7 +196,7 @@ index 5cf6fae..976c75e 100644
 +        free(passwd_buffer);
 +        free(salt_buffer);
 +    }
-     
+ 
      NSMutableString *hexResult = [NSMutableString stringWithCapacity:dkLen * 2];
      for(i = 0;i < dkLen; i++ )
 @@ -77,8 +81,56 @@ RCT_REMAP_METHOD(scrypt, scrypt:(NSString *)passwd
