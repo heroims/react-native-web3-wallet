@@ -155,7 +155,7 @@ export function exportMnemonic(mnemonic, address, path = "m/44'/60'/0'/0/0", pas
         }
         
         if(!passwordError){
-            let mnemonicArr = res.mnemonic.phrase.split(' ');
+            let mnemonicArr = hdnode.mnemonic.phrase.split(' ');
             let shuffleMnemonicArr = shuffleArray(mnemonicArr);
             fulfill({
                 mnemonic : mnemonicArr, 
@@ -245,10 +245,10 @@ export function importPrivateKey(privateKey, password, needPrivateKey = false, n
                     address : wallet.address,
                 };
                 if(needPublicKey){
-                    response.publicKey=res.publicKey;
+                    response.publicKey=jsonObj.publicKey;
                 }
                 if(needPrivateKey){
-                    response.privateKey=res.privateKey;
+                    response.privateKey=jsonObj.privateKey;
                 }
                 fulfill(response);
             })
@@ -432,13 +432,13 @@ export function getContractNfts(network, contractAddress, contractAbi, address, 
                     .sort(
                       (a, b) =>
                         a.blockNumber - b.blockNumber ||
-                        a.transactionIndex - b.TransactionIndex,
+                        a.transactionIndex - b.transactionIndex,
                     );
 
                     const owned = new Set();
 
                     function addressEqual(arg1, arg2) {
-                        return arg1.replace('0x','').toLowerCase() == arg2.replace('0x','').toLowerCase();
+                        return arg1.replace('0x','').toLowerCase() === arg2.replace('0x','').toLowerCase();
                     }
                     for (const log of logs) {
                         const { from, to, tokenId } = log.args;
@@ -618,8 +618,8 @@ export function signTransaction(keystore, password, nonce, gasLimit, gasPrice, t
                     value: realAmount,
                     data: data
                 };
-                wallet.signTransaction(tx).then(res=>{
-                    fulfill(res);
+                wallet.signTransaction(tx).then(signString=>{
+                    fulfill(signString);
                 })
                 .catch(err=>{
                     reject(err);
@@ -641,8 +641,8 @@ export function signMessage(keystore, password, message){
             ethers.Wallet.fromEncryptedJson(keystore, password).then(res=>{
                 let wallet = res;
 
-                wallet.signMessage(message).then(res=>{
-                    fulfill(res);
+                wallet.signMessage(message).then(signString=>{
+                    fulfill(signString);
                 })
                 .catch(err=>{
                     reject(err);
@@ -664,8 +664,8 @@ export function signTypedData(keystore, password, domain, types, value){
             ethers.Wallet.fromEncryptedJson(keystore, password).then(res=>{
                 let wallet = res;
 
-                wallet._signTypedData(domain, types, value).then(res=>{
-                    fulfill(res);
+                wallet._signTypedData(domain, types, value).then(signString=>{
+                    fulfill(signString);
                 })
                 .catch(err=>{
                     reject(err);
@@ -756,8 +756,8 @@ export function contractTransaction(network, contractAddress, contractAbi, keyst
                         gasPrice: gasPrice,
                     };
 
-                    contractWithSigner.transfer(toAddress, realAmount, tx).then(res=>{
-                        fulfill(res);
+                    contractWithSigner.transfer(toAddress, realAmount, tx).then(txres=>{
+                        fulfill(txres);
                     })
                     .catch(err=>{
                         reject(err);
