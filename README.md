@@ -9,19 +9,30 @@ This wallet module does not expose the private key, and only advocates storing t
 ## Installation
 
 ```bash
-npm install github:heroims/react-native-web3-wallet --save
-npm install @ethersproject/shims --save
-npm install react-native-get-random-values --save
-npx pod-install
-```
-
-### fix React Native so slow
-```bash
+npm install github:heroims/react-native-web3-wallet#ethers6.x --save
+npm install rn-nodeify  --save
 npm install react-native-scrypt@1.2.1
-npm install react-native-aes-crypto@2.1.0
+npm install react-native-aes-crypto@2.1.1
 ```
-move `patches` finder to your root directory, and execute command `npx patch-package`
 
+move `patches` finder to your root directory
+
+add `"postinstall": "rn-nodeify --install assert,url,http,zlib,https,buffer,process,stream,net,crypto --hack && patch-package",` in `package.json`
+
+execute command `npm install`
+
+add this in `babel.config.js`
+```
+plugins: [
+    '@babel/plugin-proposal-class-properties',
+    '@babel/plugin-proposal-private-methods',
+  ],
+``` 
+
+remove `node_modules/react-native-tcp/ios/CocoaAsyncSocket`
+execute command `npx pod-install`
+
+In your project before importing,you need add `import 'ethers_shim.js';`.
 
 ## Usage
 
