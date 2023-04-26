@@ -9,7 +9,7 @@ This wallet module does not expose the private key, and only advocates storing t
 ## Installation
 
 ```bash
-npm install github:heroims/react-native-web3-wallet#ethers6.x --save
+npm install "github:heroims/react-native-web3-wallet#ether6.x" --save
 npm install rn-nodeify  --save
 npm install react-native-scrypt@1.2.1
 npm install react-native-aes-crypto@2.1.1
