@@ -325,7 +325,7 @@ export function importMnemonic(mnemonic, password, path = "m/44'/60'/0'/0/0", ne
  * @param {string} password
  * @param {boolean} [needPrivateKey=false]
  * @param {boolean} [needPublicKey=false]
- * @return {Promise<{address:'',keystore:{},publicKey:'',privateKey:''}>} 
+ * @return {Promise<{address:'',keystore:{},publicKey:'',privateKey:'',mnemonic=[],shuffleMnemonic:[]}>} 
  */
 export function importKeystore(keystore, password, needPrivateKey = false, needPublicKey = false){
     return new Promise((fulfill, reject)=>{
@@ -340,6 +340,12 @@ export function importKeystore(keystore, password, needPrivateKey = false, needP
             }
             if(needPrivateKey){
                 response.privateKey=res.privateKey;
+            }
+            if(res.mnemonic){
+                let mnemonicArr = res.mnemonic.phrase.split(' ');
+                let shuffleMnemonicArr = shuffleArray(mnemonicArr);
+                response.mnemonic = mnemonicArr;
+                response.shuffleMnemonic = shuffleMnemonicArr;
             }
             fulfill(response);
         })

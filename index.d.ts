@@ -121,7 +121,7 @@ export declare function importMnemonic(mnemonic: string, password: string, path?
  * @param {string} password
  * @param {boolean} [needPrivateKey=false]
  * @param {boolean} [needPublicKey=false]
- * @return {Promise<{address:'',keystore:{},publicKey:'',privateKey:''}>}
+ * @return {Promise<{address:'',keystore:{},publicKey:'',privateKey:'',mnemonic=[],shuffleMnemonic:[]}>}
  */
 export declare function importKeystore(keystore: string, password: string, needPrivateKey?: boolean, needPublicKey?: boolean): Promise<IWallet>;
 
