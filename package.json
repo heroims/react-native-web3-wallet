@@ -5,9 +5,7 @@
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "files": [
-    "lib/index.js",
-    "lib/index.d.ts",
-    "ethers_shim.js"
+    "lib/*"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
