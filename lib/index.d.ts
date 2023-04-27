@@ -1,3 +1,4 @@
+import './ethers_shim';
 import { HDNodeWallet, ethers } from 'ethers';
 type WalletResponse = {
     mnemonic: Array<string>;
@@ -104,3 +105,4 @@ export declare function hexlify(value: ethers.BigNumberish, _width?: ethers.Nume
 export declare function encodeABI(types: [], values: []): string;
 export declare function decodeABI(types: [], data: ethers.BytesLike): ethers.Result;
 export declare function createBigNumber(value: string): bigint;
+export {};

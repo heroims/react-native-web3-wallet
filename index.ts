@@ -1,3 +1,4 @@
+import './ethers_shim'
 import {HDNodeWallet, ethers} from 'ethers';
 
 type WalletResponse = {
