@@ -32,8 +32,6 @@ plugins: [
 remove `node_modules/react-native-tcp/ios/CocoaAsyncSocket`
 execute command `npx pod-install`
 
-In your project before importing,you need add `import 'ethers_shim.js';`.
-
 ## Usage
 
 ### Import
