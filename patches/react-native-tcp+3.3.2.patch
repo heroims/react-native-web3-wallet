@@ -9623,8 +9623,4 @@ index abf2a8a..0000000
 -	return [NSData dataWithBytes:"" length:1];
 -}
 -
--@end	
-diff --git a/node_modules/react-native-tcp/LICENSE b/node_modules/react-native-tcp/react-native-tcp
-similarity index 100%
-rename from node_modules/react-native-tcp/LICENSE
-rename to node_modules/react-native-tcp/react-native-tcp
+-@end
