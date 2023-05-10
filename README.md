@@ -9,6 +9,7 @@ This wallet module does not expose the private key, and only advocates storing t
 ## Installation
 
 ```bash
+npm install patch-package -g
 npm install "github:heroims/react-native-web3-wallet#ether6.x" --save
 npm install rn-nodeify  --save
 npm install react-native-scrypt@1.2.1
@@ -29,7 +30,6 @@ plugins: [
   ],
 ``` 
 
-remove `node_modules/react-native-tcp/ios/CocoaAsyncSocket`
 execute command `npx pod-install`
 
 ## Usage
