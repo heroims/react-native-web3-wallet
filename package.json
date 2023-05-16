@@ -1,12 +1,12 @@
 {
-  "name": "react-native-web3-wallet",
-  "version": "1.2.4",
+  "name": "react-native-web3-wallet-bitcoin",
+  "version": "1.0.0",
   "description": "This is a safe web3 wallet tools, to help with develop wallet applications quickly.",
-  "main": "index.js",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "files": [
-    "index.js",
-    "index.d.ts",
-    "interface.ts"
+    "lib/*",
+    "README.md"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,7 +14,7 @@
   "keywords": [
     "react-native",
     "web3",
-    "ethers",
+    "bitcoinjs",
     "wallet"
   ],
   "author": "heroims",
@@ -27,11 +27,16 @@
     "url": "git+https://github.com/heroims/react-native-web3-wallet.git"
   },
   "peerDependencies": {
-    "react-native": "*",
-    "react-native-get-random-values": "*"
+    "react-native": ">=0.70.0"
   },
   "dependencies": {
-    "@ethersproject/shims": "^5.7.0",
-    "ethers": "^5.7.0"
+    "@bitcoinerlab/secp256k1": "^1.0.2",
+    "bip32": "^4.0.0",
+    "bip39": "^3.1.0",
+    "bitcoinjs-lib": "^6.1.0",
+    "ecpair": "^2.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.4"
   }
 }
