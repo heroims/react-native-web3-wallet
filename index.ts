@@ -1159,3 +1159,7 @@ export function decodeABI(types: [], data: ethers.BytesLike): ethers.Result {
 export function createBigNumber(value: string): bigint {
   return BigInt(value);
 }
+
+export function getCheckSumAddress(value: string): string {
+  return ethers.getAddress(value);
+}
