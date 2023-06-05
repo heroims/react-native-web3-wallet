@@ -328,3 +328,5 @@ export declare function encodeABI(types: (string|ethers.utils.ParamType)[], valu
 export declare function decodeABI(types: (string|ethers.utils.ParamType)[], values: ethers.utils.BytesLike): ethers.utils.Result;
 
 export declare function createBigNumber(value: any): BigNumber;
+
+export declare function getCheckSumAddress(address: string): string;
