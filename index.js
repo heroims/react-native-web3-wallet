@@ -1103,3 +1103,7 @@ export function decodeABI(types, data){
 export function createBigNumber(value){
     return BigNumber.from(value);
 }
+
+export function getCheckSumAddress(address){
+    return ethers.utils.getAddress(address);
+}
