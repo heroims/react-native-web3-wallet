@@ -6,6 +6,10 @@ This is a safe web3 wallet tools, to help with develop wallet applications quick
 
 This wallet module does not expose the private key, and only advocates storing the keystore or the mnemonic with the password authentication locally, and does not activate the wallet except for write operations. 
 
+- [main branch](https://github.com/heroims/react-native-web3-wallet/tree/main) support ethers5.x
+- [ether6.x branch]( https://github.com/heroims/react-native-web3-wallet/tree/ether6.x) support ethers6.x 
+- [bitcoin branch](https://github.com/heroims/react-native-web3-wallet/tree/bitcoin) support bitcoinjs
+
 ## Installation
 
 ```bash
