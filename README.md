@@ -11,24 +11,16 @@ This wallet module does not expose the private key, and only advocates storing t
 ```bash
 npm install patch-package -g
 npm install "github:heroims/react-native-web3-wallet#ether6.x" --save
-npm install rn-nodeify  --save
+npm install react-native-get-random-values
 npm install react-native-scrypt@1.2.1
 npm install react-native-aes-crypto@3.0.1
 ```
 
 move `patches` finder to your root directory
 
-add `"postinstall": "rn-nodeify --install assert,url,http,zlib,https,buffer,process,stream,net,crypto --hack && patch-package",` in `package.json`
+add `"postinstall": "patch-package",` in `package.json`
 
 execute command `npm install`
-
-add this in `babel.config.js`
-```
-plugins: [
-    '@babel/plugin-proposal-class-properties',
-    '@babel/plugin-proposal-private-methods',
-  ],
-``` 
 
 execute command `npx pod-install`
 
